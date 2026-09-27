@@ -37,8 +37,9 @@ import ReportGeneration from "./Reports/ReportGeneration.jsx";
 import ProtectedRoute, {
   AuthHistoryGuard,
   GuestRoute,
+  AdminRoute,
 } from "./ProtectedRoute.jsx";
-import { getIsLoggedIn, getAuthRole, checkDevRunSession } from "./utils/authStorage.js";
+import { getIsLoggedIn, checkDevRunSession } from "./utils/authStorage.js";
 
 const RootRedirect = () => {
   checkDevRunSession();
@@ -114,30 +115,26 @@ function AdminApp() {
       <Route
         path="/sales"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <SalesRecord />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/customers"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <Customers />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
@@ -155,60 +152,52 @@ function AdminApp() {
       <Route
         path="/cash-advance"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <CashAdvance />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/stock-requests"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <StockRequest />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/supply-requests"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <SupplyRequest />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/staff-performance"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <StaffPerformance />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
@@ -226,15 +215,13 @@ function AdminApp() {
       <Route
         path="/user-profiles"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <UserProfiles />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
@@ -258,45 +245,39 @@ function AdminApp() {
       <Route
         path="/RequestAdmin"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <RequestAdmin />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/pullout-admin"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <PullOutAdmin />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/back-to-sales"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <BackToSale />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
@@ -304,90 +285,78 @@ function AdminApp() {
       <Route
         path="/reports"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <ReportGeneration />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/reports/sales"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <SalesReport />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/reports/inventory"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <InventoryReport />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/reports/attendance"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <AttendanceReport />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/reports/branch"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <BranchReport />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
       <Route
         path="/reports/pullout"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <PullOutReport />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 

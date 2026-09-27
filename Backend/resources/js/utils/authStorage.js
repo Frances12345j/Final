@@ -17,7 +17,11 @@ export const getAuthUser = () => {
 };
 
 export const getAuthRole = () => {
-  return sessionStorage.getItem("role") || localStorage.getItem("role") || "";
+  const role = sessionStorage.getItem("role") || localStorage.getItem("role");
+  if (role) return String(role).trim().toLowerCase();
+  const user = getAuthUser();
+  if (user?.role) return String(user.role).trim().toLowerCase();
+  return "";
 };
 
 export const getIsLoggedIn = () => {

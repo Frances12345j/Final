@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
-import { getIsLoggedIn, checkDevRunSession } from "./utils/authStorage";
+import { getIsLoggedIn, getAuthRole, checkDevRunSession } from "./utils/authStorage";
 
 // Simple auth check using session-aware storage
 const isAuthenticated = () => {
@@ -58,11 +58,21 @@ function AuthHistoryGuard() {
   return null;
 }
 
+// Admin-only route guard
+function AdminRoute({ children }) {
+  const role = getAuthRole();
+  if (role !== "admin") {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return children;
+}
+
 export {
   isAuthenticated,
   AuthHistoryGuard,
   ProtectedRoute,
   GuestRoute,
+  AdminRoute,
   seedAuthenticatedHistory,
   PUBLIC_PATHS,
   DEFAULT_AUTH_PATH,
