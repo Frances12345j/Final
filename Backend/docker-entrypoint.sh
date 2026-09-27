@@ -40,6 +40,7 @@ php artisan storage:link --force || true
 if [ "$RUN_MIGRATIONS" = "true" ]; then
     echo "Running database migrations..."
     php artisan migrate --force || true
+    php artisan db:seed --class=AdminSeeder --force || true
 fi
 
 # Clear old configuration cache so runtime environment variables are respected

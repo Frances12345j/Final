@@ -118,6 +118,7 @@ chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database\n\
 php artisan storage:link --force || true\n\
 php artisan migrate --force || true\n\
+php artisan db:seed --class=AdminSeeder --force || true\n\
 php artisan config:clear || true\n\
 php artisan route:clear || true\n\
 php artisan view:clear || true\n\
