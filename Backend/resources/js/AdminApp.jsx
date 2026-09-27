@@ -365,15 +365,13 @@ function AdminApp() {
       <Route
         path="/delivery"
         element={
-          getAuthRole() === "admin" ? (
-            <ProtectedRoute>
+          <ProtectedRoute>
+            <AdminRoute>
               <Layout>
                 <Delivery />
               </Layout>
-            </ProtectedRoute>
-          ) : (
-            <Navigate to="/dashboard" replace />
-          )
+            </AdminRoute>
+          </ProtectedRoute>
         }
       />
 
