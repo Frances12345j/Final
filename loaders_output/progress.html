@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>Progress Bar</title>
+<style>
+body { display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; background:#1a1a2e; }
+.progress-container {
+    width: 200px;
+    height: 6px;
+    background: #e0e0e0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.progress-bar {
+    width: 40%;
+    height: 100%;
+    background: #3498db;
+    border-radius: 3px;
+    animation: progress-slide 1.5s ease-in-out infinite;
+}
+@keyframes progress-slide {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(350%); }
+}
+</style>
+</head><body>
+<div class="progress-container">
+    <div class="progress-bar"></div>
+</div>
+</body></html>

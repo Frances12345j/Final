@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>Ellipsis</title>
+<style>
+body { display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; background:#1a1a2e; }
+.ellipsis {
+    display: flex;
+    gap: 4px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #3498db;
+}
+.ellipsis-dot {
+    width: 8px;
+    height: 8px;
+    background: #3498db;
+    border-radius: 50%;
+    animation: ellipsis-bounce 1.4s infinite ease-in-out both;
+}
+.ellipsis-dot:nth-child(1) { animation-delay: -0.32s; }
+.ellipsis-dot:nth-child(2) { animation-delay: -0.16s; }
+.ellipsis-dot:nth-child(3) { animation-delay: 0s; }
+.ellipsis-dot:nth-child(4) { animation-delay: 0.16s; }
+@keyframes ellipsis-bounce {
+    0%, 80%, 100% { transform: scale(0.4); opacity: 0.4; }
+    40% { transform: scale(1); opacity: 1; }
+}
+</style>
+</head><body>
+<div class="ellipsis">
+    <div class="ellipsis-dot"></div>
+    <div class="ellipsis-dot"></div>
+    <div class="ellipsis-dot"></div>
+    <div class="ellipsis-dot"></div>
+</div>
+</body></html>

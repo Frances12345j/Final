@@ -1,0 +1,88 @@
+import axios from "axios";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: {
+    Accept: "application/json",
+  },
+});
+
+// Deduplicate identical in-flight GET requests to prevent network stampedes
+const inFlightGets = new Map();
+const originalGet = api.get.bind(api);
+
+api.get = function (url, config = {}) {
+  if (config?.skipDedupe) {
+    return originalGet(url, config);
+  }
+
+  const key = `${url}?${JSON.stringify(config?.params || {})}`;
+  if (inFlightGets.has(key)) {
+    return inFlightGets.get(key);
+  }
+
+  const promise = originalGet(url, config).finally(() => {
+    inFlightGets.delete(key);
+  });
+
+  inFlightGets.set(key, promise);
+  return promise;
+};
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+const SESSION_KEYS = ["token", "user", "role", "isLoggedIn"];
+let endingSession = false;
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const status = error?.response?.status;
+    const url = error?.config?.url || "";
+
+    // Login/refresh failures are normal — never redirect on these
+    if (url.includes("/login") || url.includes("/refresh")) {
+      return Promise.reject(error);
+    }
+
+    // Only end session on a real 401/419
+    if (status === 401 || status === 419) {
+      // ✅ Check kung naa pa ba'y token — kung wala, wala nay session
+      const token = localStorage.getItem("token");
+
+      if (token) {
+        // Naa pa'y token pero 401 — basin race condition o expired.
+        // Ayaw dayon i-logout — hulata ang ProtectedRoute mo-handle.
+        // Pero kung 419 (CSRF/token mismatch), i-logout gyud.
+        if (status === 419) {
+          SESSION_KEYS.forEach((key) => localStorage.removeItem(key));
+          if (!endingSession) {
+            endingSession = true;
+            window.location.replace("/login");
+          }
+        }
+        // status === 401 + naa pa'y token = ayaw i-logout
+        // (basin nag-load pa ang bag-ong token, o stale request)
+      } else {
+        // Wala nay token — session gyud nawala
+        SESSION_KEYS.forEach((key) => localStorage.removeItem(key));
+        if (!endingSession) {
+          endingSession = true;
+          window.location.replace("/login");
+        }
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export { API_BASE_URL };

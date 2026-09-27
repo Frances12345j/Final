@@ -1,0 +1,72 @@
+{
+  "spinner": {
+    "name": "Spinner",
+    "html": "<div class=\"spinner\"></div>",
+    "css": ".spinner {\n    width: 40px;\n    height: 40px;\n    border: 4px solid #f3f3f3;\n    border-top: 4px solid #3498db;\n    border-radius: 50%;\n    animation: spin 1s linear infinite;\n}\n@keyframes spin {\n    0% { transform: rotate(0deg); }\n    100% { transform: rotate(360deg); }\n}"
+  },
+  "dots": {
+    "name": "Bouncing Dots",
+    "html": "<div class=\"dots\">\n    <div class=\"dot\"></div>\n    <div class=\"dot\"></div>\n    <div class=\"dot\"></div>\n</div>",
+    "css": ".dots {\n    display: flex;\n    gap: 8px;\n    align-items: center;\n}\n.dot {\n    width: 12px;\n    height: 12px;\n    background: #3498db;\n    border-radius: 50%;\n    animation: bounce 1.4s infinite ease-in-out both;\n}\n.dot:nth-child(1) { animation-delay: -0.32s; }\n.dot:nth-child(2) { animation-delay: -0.16s; }\n@keyframes bounce {\n    0%, 80%, 100% { transform: scale(0); }\n    40% { transform: scale(1); }\n}"
+  },
+  "pulse": {
+    "name": "Pulse",
+    "html": "<div class=\"pulse\"></div>",
+    "css": ".pulse {\n    width: 40px;\n    height: 40px;\n    background: #3498db;\n    border-radius: 50%;\n    animation: pulse 1.2s ease-in-out infinite;\n}\n@keyframes pulse {\n    0% { transform: scale(0.5); opacity: 1; }\n    100% { transform: scale(1.2); opacity: 0; }\n}"
+  },
+  "bars": {
+    "name": "Bars",
+    "html": "<div class=\"bars\">\n    <div class=\"bar\"></div>\n    <div class=\"bar\"></div>\n    <div class=\"bar\"></div>\n    <div class=\"bar\"></div>\n    <div class=\"bar\"></div>\n</div>",
+    "css": ".bars {\n    display: flex;\n    gap: 4px;\n    align-items: center;\n    height: 40px;\n}\n.bar {\n    width: 6px;\n    height: 100%;\n    background: #3498db;\n    animation: bar-pulse 1s ease-in-out infinite;\n}\n.bar:nth-child(1) { animation-delay: 0s; }\n.bar:nth-child(2) { animation-delay: 0.1s; }\n.bar:nth-child(3) { animation-delay: 0.2s; }\n.bar:nth-child(4) { animation-delay: 0.3s; }\n.bar:nth-child(5) { animation-delay: 0.4s; }\n@keyframes bar-pulse {\n    0%, 100% { transform: scaleY(0.4); }\n    50% { transform: scaleY(1); }\n}"
+  },
+  "ring": {
+    "name": "Ring",
+    "html": "<div class=\"ring\"></div>",
+    "css": ".ring {\n    width: 40px;\n    height: 40px;\n    border: 4px solid rgba(52, 152, 219, 0.2);\n    border-top-color: #3498db;\n    border-radius: 50%;\n    animation: ring-spin 1s linear infinite;\n}\n@keyframes ring-spin {\n    to { transform: rotate(360deg); }\n}"
+  },
+  "dual-ring": {
+    "name": "Dual Ring",
+    "html": "<div class=\"dual-ring\">\n    <div class=\"dual-ring-inner\"></div>\n</div>",
+    "css": ".dual-ring {\n    width: 44px;\n    height: 44px;\n    position: relative;\n}\n.dual-ring, .dual-ring-inner {\n    border: 4px solid transparent;\n    border-radius: 50%;\n}\n.dual-ring {\n    border-top-color: #3498db;\n    animation: dual-spin 1.2s linear infinite;\n}\n.dual-ring-inner {\n    position: absolute;\n    top: 4px; left: 4px; right: 4px; bottom: 4px;\n    border-bottom-color: #e74c3c;\n    animation: dual-spin 0.8s linear infinite reverse;\n}\n@keyframes dual-spin {\n    to { transform: rotate(360deg); }\n}"
+  },
+  "grid": {
+    "name": "Grid",
+    "html": "<div class=\"grid-loader\">\n    <div class=\"grid-cell\"></div>\n    <div class=\"grid-cell\"></div>\n    <div class=\"grid-cell\"></div>\n    <div class=\"grid-cell\"></div>\n    <div class=\"grid-cell\"></div>\n    <div class=\"grid-cell\"></div>\n    <div class=\"grid-cell\"></div>\n    <div class=\"grid-cell\"></div>\n    <div class=\"grid-cell\"></div>\n</div>",
+    "css": ".grid-loader {\n    display: grid;\n    grid-template-columns: repeat(3, 12px);\n    gap: 4px;\n}\n.grid-cell {\n    width: 12px;\n    height: 12px;\n    background: #3498db;\n    animation: grid-fade 1.3s ease-in-out infinite;\n}\n.grid-cell:nth-child(1) { animation-delay: 0s; }\n.grid-cell:nth-child(2) { animation-delay: 0.1s; }\n.grid-cell:nth-child(3) { animation-delay: 0.2s; }\n.grid-cell:nth-child(4) { animation-delay: 0.1s; }\n.grid-cell:nth-child(5) { animation-delay: 0.2s; }\n.grid-cell:nth-child(6) { animation-delay: 0.3s; }\n.grid-cell:nth-child(7) { animation-delay: 0.2s; }\n.grid-cell:nth-child(8) { animation-delay: 0.3s; }\n.grid-cell:nth-child(9) { animation-delay: 0.4s; }\n@keyframes grid-fade {\n    0%, 70%, 100% { opacity: 0.3; transform: scale(0.6); }\n    35% { opacity: 1; transform: scale(1); }\n}"
+  },
+  "skeleton": {
+    "name": "Skeleton Shimmer",
+    "html": "<div class=\"skeleton\">\n    <div class=\"skeleton-line skeleton-line-lg\"></div>\n    <div class=\"skeleton-line skeleton-line-md\"></div>\n    <div class=\"skeleton-line skeleton-line-sm\"></div>\n</div>",
+    "css": ".skeleton {\n    display: flex;\n    flex-direction: column;\n    gap: 10px;\n    width: 200px;\n}\n.skeleton-line {\n    height: 14px;\n    background: linear-gradient(90deg, #e0e0e0 25%, #f0f0f0 50%, #e0e0e0 75%);\n    background-size: 200% 100%;\n    border-radius: 4px;\n    animation: shimmer 1.5s infinite;\n}\n.skeleton-line-lg { width: 100%; }\n.skeleton-line-md { width: 80%; }\n.skeleton-line-sm { width: 50%; }\n@keyframes shimmer {\n    0% { background-position: 200% 0; }\n    100% { background-position: -200% 0; }\n}"
+  },
+  "orbit": {
+    "name": "Orbit",
+    "html": "<div class=\"orbit\">\n    <div class=\"orbit-center\"></div>\n    <div class=\"orbit-ring\"></div>\n</div>",
+    "css": ".orbit {\n    width: 48px;\n    height: 48px;\n    position: relative;\n}\n.orbit-center {\n    width: 12px;\n    height: 12px;\n    background: #3498db;\n    border-radius: 50%;\n    position: absolute;\n    top: 50%; left: 50%;\n    transform: translate(-50%, -50%);\n}\n.orbit-ring {\n    width: 100%;\n    height: 100%;\n    border: 3px solid rgba(52, 152, 219, 0.2);\n    border-top-color: #3498db;\n    border-radius: 50%;\n    animation: ring-spin 1s linear infinite;\n}"
+  },
+  "wave": {
+    "name": "Wave",
+    "html": "<div class=\"wave\">\n    <div class=\"wave-bar\"></div>\n    <div class=\"wave-bar\"></div>\n    <div class=\"wave-bar\"></div>\n    <div class=\"wave-bar\"></div>\n    <div class=\"wave-bar\"></div>\n</div>",
+    "css": ".wave {\n    display: flex;\n    gap: 3px;\n    align-items: center;\n    height: 40px;\n}\n.wave-bar {\n    width: 4px;\n    height: 20px;\n    background: #3498db;\n    border-radius: 2px;\n    animation: wave-anim 1.2s ease-in-out infinite;\n}\n.wave-bar:nth-child(1) { animation-delay: 0s; }\n.wave-bar:nth-child(2) { animation-delay: 0.1s; }\n.wave-bar:nth-child(3) { animation-delay: 0.2s; }\n.wave-bar:nth-child(4) { animation-delay: 0.3s; }\n.wave-bar:nth-child(5) { animation-delay: 0.4s; }\n@keyframes wave-anim {\n    0%, 100% { height: 20px; }\n    50% { height: 40px; }\n}"
+  },
+  "progress": {
+    "name": "Progress Bar",
+    "html": "<div class=\"progress-container\">\n    <div class=\"progress-bar\"></div>\n</div>",
+    "css": ".progress-container {\n    width: 200px;\n    height: 6px;\n    background: #e0e0e0;\n    border-radius: 3px;\n    overflow: hidden;\n}\n.progress-bar {\n    width: 40%;\n    height: 100%;\n    background: #3498db;\n    border-radius: 3px;\n    animation: progress-slide 1.5s ease-in-out infinite;\n}\n@keyframes progress-slide {\n    0% { transform: translateX(-100%); }\n    100% { transform: translateX(350%); }\n}"
+  },
+  "heartbeat": {
+    "name": "Heartbeat",
+    "html": "<div class=\"heartbeat\">&#10084;</div>",
+    "css": ".heartbeat {\n    font-size: 32px;\n    color: #e74c3c;\n    animation: heartbeat 1.2s ease-in-out infinite;\n}\n@keyframes heartbeat {\n    0%, 100% { transform: scale(1); }\n    14% { transform: scale(1.3); }\n    28% { transform: scale(1); }\n    42% { transform: scale(1.3); }\n    70% { transform: scale(1); }\n}"
+  },
+  "ellipsis": {
+    "name": "Ellipsis",
+    "html": "<div class=\"ellipsis\">\n    <div class=\"ellipsis-dot\"></div>\n    <div class=\"ellipsis-dot\"></div>\n    <div class=\"ellipsis-dot\"></div>\n    <div class=\"ellipsis-dot\"></div>\n</div>",
+    "css": ".ellipsis {\n    display: flex;\n    gap: 4px;\n    font-size: 28px;\n    font-weight: bold;\n    color: #3498db;\n}\n.ellipsis-dot {\n    width: 8px;\n    height: 8px;\n    background: #3498db;\n    border-radius: 50%;\n    animation: ellipsis-bounce 1.4s infinite ease-in-out both;\n}\n.ellipsis-dot:nth-child(1) { animation-delay: -0.32s; }\n.ellipsis-dot:nth-child(2) { animation-delay: -0.16s; }\n.ellipsis-dot:nth-child(3) { animation-delay: 0s; }\n.ellipsis-dot:nth-child(4) { animation-delay: 0.16s; }\n@keyframes ellipsis-bounce {\n    0%, 80%, 100% { transform: scale(0.4); opacity: 0.4; }\n    40% { transform: scale(1); opacity: 1; }\n}"
+  },
+  "cube": {
+    "name": "Rotating Cube",
+    "html": "<div class=\"cube-loader\">\n    <div class=\"cube-face cube-front\"></div>\n    <div class=\"cube-face cube-back\"></div>\n    <div class=\"cube-face cube-right\"></div>\n    <div class=\"cube-face cube-left\"></div>\n    <div class=\"cube-face cube-top\"></div>\n    <div class=\"cube-face cube-bottom\"></div>\n</div>",
+    "css": ".cube-loader {\n    width: 40px;\n    height: 40px;\n    position: relative;\n    transform-style: preserve-3d;\n    animation: cube-rotate 2s linear infinite;\n}\n.cube-face {\n    position: absolute;\n    width: 40px;\n    height: 40px;\n    background: rgba(52, 152, 219, 0.8);\n    border: 2px solid rgba(255,255,255,0.3);\n}\n.cube-front  { transform: translateZ(20px); }\n.cube-back   { transform: rotateY(180deg) translateZ(20px); }\n.cube-right  { transform: rotateY(90deg) translateZ(20px); }\n.cube-left   { transform: rotateY(-90deg) translateZ(20px); }\n.cube-top    { transform: rotateX(90deg) translateZ(20px); }\n.cube-bottom { transform: rotateX(-90deg) translateZ(20px); }\n@keyframes cube-rotate {\n    0% { transform: rotateX(0deg) rotateY(0deg); }\n    100% { transform: rotateX(360deg) rotateY(360deg); }\n}"
+  }
+}

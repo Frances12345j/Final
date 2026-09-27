@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>Rotating Cube</title>
+<style>
+body { display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; background:#1a1a2e; }
+.cube-loader {
+    width: 40px;
+    height: 40px;
+    position: relative;
+    transform-style: preserve-3d;
+    animation: cube-rotate 2s linear infinite;
+}
+.cube-face {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background: rgba(52, 152, 219, 0.8);
+    border: 2px solid rgba(255,255,255,0.3);
+}
+.cube-front  { transform: translateZ(20px); }
+.cube-back   { transform: rotateY(180deg) translateZ(20px); }
+.cube-right  { transform: rotateY(90deg) translateZ(20px); }
+.cube-left   { transform: rotateY(-90deg) translateZ(20px); }
+.cube-top    { transform: rotateX(90deg) translateZ(20px); }
+.cube-bottom { transform: rotateX(-90deg) translateZ(20px); }
+@keyframes cube-rotate {
+    0% { transform: rotateX(0deg) rotateY(0deg); }
+    100% { transform: rotateX(360deg) rotateY(360deg); }
+}
+</style>
+</head><body>
+<div class="cube-loader">
+    <div class="cube-face cube-front"></div>
+    <div class="cube-face cube-back"></div>
+    <div class="cube-face cube-right"></div>
+    <div class="cube-face cube-left"></div>
+    <div class="cube-face cube-top"></div>
+    <div class="cube-face cube-bottom"></div>
+</div>
+</body></html>

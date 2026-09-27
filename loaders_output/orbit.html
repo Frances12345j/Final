@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<title>Orbit</title>
+<style>
+body { display:flex; justify-content:center; align-items:center; min-height:100vh; margin:0; background:#1a1a2e; }
+.orbit {
+    width: 48px;
+    height: 48px;
+    position: relative;
+}
+.orbit-center {
+    width: 12px;
+    height: 12px;
+    background: #3498db;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+}
+.orbit-ring {
+    width: 100%;
+    height: 100%;
+    border: 3px solid rgba(52, 152, 219, 0.2);
+    border-top-color: #3498db;
+    border-radius: 50%;
+    animation: ring-spin 1s linear infinite;
+}
+</style>
+</head><body>
+<div class="orbit">
+    <div class="orbit-center"></div>
+    <div class="orbit-ring"></div>
+</div>
+</body></html>
