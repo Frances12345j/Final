@@ -7,27 +7,37 @@ import { deleteUser } from './userStorage';
 /* ================================================================== */
 /* Central backend configuration                                       */
 /*                                                                    */
-/* The REST API and the WebSocket (Laravel Reverb) server run on the  */
-/* SAME host but on DIFFERENT ports. Both derive from the single       */
-/* BACKEND_IP below.                                                   */
-/*                                                                    */
-/* To change the backend, edit ONLY `BACKEND_IP` in this file.         */
+/* Supports environment variables (for Render / Production)            */
+/* with automatic fallback to local development.                       */
 /* ================================================================== */
 
-export const BACKEND_IP = '192.168.254.105';
+const ENV_BACKEND_ORIGIN = process.env.EXPO_PUBLIC_BACKEND_URL || '';
+const ENV_API_URL = process.env.EXPO_PUBLIC_API_URL || '';
 
-export const API_PORT = 8000;
-export const WEBSOCKET_PORT = 8080;
+export const BACKEND_IP = process.env.EXPO_PUBLIC_BACKEND_IP || '192.168.254.105';
 
-export const BACKEND_ORIGIN = `http://${BACKEND_IP}:${API_PORT}`;
+export const API_PORT = process.env.EXPO_PUBLIC_API_PORT || 8000;
+export const WEBSOCKET_PORT = process.env.EXPO_PUBLIC_REVERB_PORT
+  ? parseInt(process.env.EXPO_PUBLIC_REVERB_PORT, 10)
+  : 8080;
 
-export const API_BASE_URL = `${BACKEND_ORIGIN}/api`;
+export const BACKEND_ORIGIN =
+  ENV_BACKEND_ORIGIN ||
+  (ENV_API_URL ? ENV_API_URL.replace(/\/api\/?$/, '') : `http://${BACKEND_IP}:${API_PORT}`);
+
+export const API_BASE_URL = ENV_API_URL || `${BACKEND_ORIGIN}/api`;
 
 export const BROADCAST_AUTH_URL = `${BACKEND_ORIGIN}/broadcasting/auth`;
 
-export const WEBSOCKET_HOST = BACKEND_IP;
-
 export const STORAGE_URL = `${BACKEND_ORIGIN}/storage`;
+
+const isSecure = BACKEND_ORIGIN.startsWith('https://');
+
+export const WEBSOCKET_HOST =
+  process.env.EXPO_PUBLIC_REVERB_HOST ||
+  (isSecure ? BACKEND_ORIGIN.replace(/^https?:\/\//, '').split(/[:/]/)[0] : BACKEND_IP);
+
+export const IS_WEBSOCKET_SECURE = isSecure;
 
 /* ------------------------------------------------------------------ */
 /* REST API (Axios)                                                    */
@@ -124,8 +134,8 @@ api.interceptors.response.use(
 /* ------------------------------------------------------------------ */
 
 const WS_HOST = WEBSOCKET_HOST;
-const WS_PORT = WEBSOCKET_PORT;
-const REVERB_KEY = 'newmoon-app-key';
+const WS_PORT = IS_WEBSOCKET_SECURE ? 443 : WEBSOCKET_PORT;
+const REVERB_KEY = process.env.EXPO_PUBLIC_REVERB_KEY || 'newmoon-app-key';
 
 const Pusher = (PusherModule as any).Pusher ?? PusherModule;
 
@@ -139,7 +149,7 @@ export const getEcho = async (): Promise<Echo<any> | null> => {
       wsHost: WS_HOST,
       wsPort: WS_PORT,
       wssPort: WS_PORT,
-      forceTLS: false,
+      forceTLS: IS_WEBSOCKET_SECURE,
       enabledTransports: ['ws', 'wss'],
       authEndpoint: BROADCAST_AUTH_URL,
       auth: {
