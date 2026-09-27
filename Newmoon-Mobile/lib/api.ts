@@ -14,7 +14,7 @@ import { deleteUser } from './userStorage';
 /* To change the backend, edit ONLY `BACKEND_IP` in this file.         */
 /* ================================================================== */
 
-export const BACKEND_IP = '192.168.1.35';
+export const BACKEND_IP = '192.168.254.105';
 
 export const API_PORT = 8000;
 export const WEBSOCKET_PORT = 8080;

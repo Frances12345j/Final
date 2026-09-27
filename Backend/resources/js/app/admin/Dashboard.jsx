@@ -1,5 +1,5 @@
 import react, { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom"; // Gi-dugang ang useLocation
+import { useNavigate, useLocation } from "react-router-dom";
 import {
   Button,
   Modal,
@@ -51,7 +51,7 @@ const DASHBOARD_ENDPOINTS = ["branches", "staff", "sales", "products"];
 
 function Dashboard() {
   const navigate = useNavigate();
-  const location = useLocation(); // <--- Gi-dugang para sa Back Trap
+  const location = useLocation();
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [branches, setBranches] = useState(() => getCache("branches") || []);
@@ -63,8 +63,6 @@ function Dashboard() {
   });
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loadError, setLoadError] = useState("");
-  const [lowStockItems, setLowStockItems] = useState([]);
-  const [showLowStockModal, setShowLowStockModal] = useState(false);
 
   // ─── Sales Performance state ────────────────────────────────────
   const [salesPeriod, setSalesPeriod] = useState("month");
@@ -75,15 +73,11 @@ function Dashboard() {
   const [onlineLoading, setOnlineLoading] = useState(false);
   const [onlineError, setOnlineError] = useState("");
 
-  const [dismissedLowStock, setDismissedLowStock] = useState(() => {
-    return sessionStorage.getItem("dismissed_low_stock") === "true";
-  });
-
   const [addBranchForm] = Form.useForm();
 
   const currentUser = (() => {
     try {
-      return JSON.parse(sessionStorage.getItem("user") || localStorage.getItem("user") || "{}");
+      return JSON.parse(localStorage.getItem("user") || "{}");
     } catch {
       return {};
     }
@@ -92,24 +86,17 @@ function Dashboard() {
   const userName = currentUser.name || currentUser.username || "";
 
   // =========================================================
-  // BACK BUTTON TRAP (Para dili makagawas ang user sa Dashboard)
+  // BACK BUTTON TRAP
   // =========================================================
   useEffect(() => {
-    // 1. I-push ang current dashboard URL sa history aron naay "trap"
     window.history.pushState(null, document.title, window.location.href);
 
-    // 2. Listener kung mo-pindot ang user sa Back button
     const handlePopState = () => {
-      // Kada pindot nila og Back, i-push balik sila sa Dashboard
       window.history.pushState(null, document.title, window.location.href);
-
-      // Opsyonal: Kung gusto nimo i-force refresh ang dashboard aron makita ang latest data
-      // navigate(location.pathname, { replace: true }); 
     };
 
     window.addEventListener("popstate", handlePopState);
 
-    // 3. Limpyohan ang listener kung muhawa ang user sa Dashboard (e.g., Logout)
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
@@ -180,8 +167,6 @@ function Dashboard() {
               reason?.response?.data?.error ||
               reason?.message;
 
-            // 401/419 is handled centrally by the api client, which ends the session
-            // and sends the user to the login screen.
             if (status === 401 || status === 419) {
               return;
             }
@@ -225,38 +210,6 @@ function Dashboard() {
           setSales(salesData);
           setProducts(productsData);
 
-          const lowStock = [];
-
-          for (const product of productsData) {
-            if (!product.product_stocks) continue;
-
-            for (const stock of product.product_stocks) {
-              const qty = parseQuantity(stock?.quantity);
-              const minStock = parseInt(stock?.minimum_stock, 10) || 0;
-
-              if (minStock > 0 && qty > 0 && qty < minStock) {
-                const branch = branchesData.find(
-                  (b) => String(b.id) === String(stock.branch_id)
-                );
-
-                lowStock.push({
-                  product_name: product.name,
-                  product_sku: product.sku,
-                  branch_name:
-                    branch?.name || `Branch #${stock.branch_id}`,
-                  quantity: qty,
-                  minimum_stock: minStock,
-                });
-              }
-            }
-          }
-
-          setLowStockItems(lowStock);
-
-          if (lowStock.length > 0 && !dismissedLowStock) {
-            setShowLowStockModal(true);
-          }
-
           setCache("branches", branchesData);
           setCache("staff", staffData);
           setCache("sales", salesData);
@@ -277,7 +230,7 @@ function Dashboard() {
 
       return run;
     },
-    [dismissedLowStock] // Gi-apil nako ni kay gigamit man sa sud sa function
+    []
   );
 
   useEffect(() => {
@@ -298,7 +251,6 @@ function Dashboard() {
     } catch (err) {
       const status = err?.response?.status;
 
-      // 401/419 is handled centrally by the api client.
       if (status === 401 || status === 419) {
         return;
       }
@@ -429,8 +381,9 @@ function Dashboard() {
     .reduce((sum, sale) => sum + parseFloat(sale.total || 0), 0);
 
   const formatCurrency = (amount) =>
-    `₱${amount.toLocaleString(undefined, {
-      minimumFractionDigits: 2,
+    `₱${Number(amount || 0).toLocaleString(undefined, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
     })}`;
 
   // ─── Total This Month ───────────────────────────────────────────
@@ -559,58 +512,6 @@ function Dashboard() {
       .slice(0, 6);
   })();
 
-  // ─── Derived inventoryWatch ─────────────────────────────────────
-  const inventoryWatch = (() => {
-    const items = [];
-
-    products.forEach((product) => {
-      if (!product.product_stocks) return;
-
-      product.product_stocks.forEach((stock) => {
-        const qty = parseQuantity(stock?.quantity);
-        const min = parseInt(stock?.minimum_stock, 10) || 0;
-
-        if (min <= 0) return;
-
-        const branch = branches.find(
-          (b) => String(b.id) === String(stock.branch_id)
-        );
-
-        const pct = Math.min(100, Math.round((qty / min) * 100));
-
-        let status, color;
-        if (qty === 0) {
-          status = "Out of Stock";
-          color = "#EF4444";
-        } else if (qty < min * 0.5) {
-          status = "Critical";
-          color = "#EF4444";
-        } else if (qty < min) {
-          status = "Low";
-          color = "#F59E0B";
-        } else {
-          status = "Healthy";
-          color = "#16A34A";
-        }
-
-        if (qty < min) {
-          items.push({
-            name: `${product.name}${branch ? ` · ${branch.name}` : ""}`,
-            qty,
-            min,
-            pct,
-            status,
-            color,
-          });
-        }
-      });
-    });
-
-    return items
-      .sort((a, b) => a.pct - b.pct)
-      .slice(0, 4);
-  })();
-
   const navigateTo = (path) => navigate(path);
 
   // ─── Palette — light warm cream + orange ─────────────────────────
@@ -665,9 +566,7 @@ function Dashboard() {
   // ─── Dashboard view ────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#FFF7ED] p-4 sm:p-6 lg:p-8">
-      {/* =========================================================
-          PAGE TITLE
-      ========================================================= */}
+      {/* PAGE TITLE */}
       <section className="relative mb-6 overflow-hidden rounded-3xl bg-linear-to-br from-stone-950 via-stone-900 to-orange-950 px-6 py-7 shadow-[0_20px_50px_rgba(67,20,7,0.20)] sm:px-8">
         <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-orange-500/10 blur-3xl" />
         <div className="pointer-events-none absolute -left-16 bottom-0 h-48 w-48 rounded-full bg-amber-400/10 blur-2xl" />
@@ -685,9 +584,7 @@ function Dashboard() {
         </div>
       </section>
 
-      {/* =========================================================
-          KPI CARDS
-      ========================================================= */}
+      {/* KPI CARDS */}
       <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
         <div
           onClick={() => navigateTo("/branch-map")}
@@ -780,9 +677,7 @@ function Dashboard() {
         </div>
       </section>
 
-      {/* =========================================================
-          ERROR
-      ========================================================= */}
+      {/* ERROR */}
       {loadError && (
         <div className="mb-6 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           <WarningOutlined className="mt-0.5" />
@@ -790,11 +685,8 @@ function Dashboard() {
         </div>
       )}
 
-      {/* =========================================================
-          SALES PERFORMANCE — REDESIGNED (matches picture)
-      ========================================================= */}
+      {/* SALES PERFORMANCE */}
       <section className="mb-6 overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm">
-        {/* Header */}
         <div className="flex flex-wrap items-start justify-between gap-3 border-b border-orange-50 px-5 py-4">
           <div>
             <h2 className="text-lg font-bold text-stone-900">Sales performance</h2>
@@ -808,12 +700,11 @@ function Dashboard() {
           </button>
         </div>
 
-        {/* KPI Summary */}
         <div className="px-5 pt-5">
           <p className="text-xs font-medium text-stone-500">Total this month</p>
           <div className="mt-1 flex items-center gap-3">
             <span className="text-3xl font-bold tracking-tight text-stone-900">
-              {formatCurrency(totalThisMonth).replace('.00', '')}
+              {formatCurrency(totalThisMonth)}
             </span>
             <span className="flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-xs font-bold text-green-600">
               <RiseOutlined /> 8.6%
@@ -821,7 +712,6 @@ function Dashboard() {
           </div>
         </div>
 
-        {/* Chart */}
         <div className="h-72 p-5 pt-2">
           {salesChartData.every((d) => d.amount === 0) ? (
             <div className="flex h-full flex-col items-center justify-center py-10 text-center">
@@ -877,9 +767,7 @@ function Dashboard() {
         </div>
       </section>
 
-      {/* =========================================================
-          ONLINE ORDERS + ONLINE SALES
-      ========================================================= */}
+      {/* ONLINE ORDERS + ONLINE SALES */}
       <div className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
         {/* Online Orders Tracker */}
         <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm">
@@ -1162,11 +1050,8 @@ function Dashboard() {
         </section>
       </div>
 
-      {/* =========================================================
-          BEST SELLERS
-      ========================================================= */}
+      {/* BEST SELLERS */}
       <div className="mb-6">
-        {/* Best Sellers */}
         <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-orange-50 px-5 py-4">
             <div className="flex items-center gap-3">
@@ -1225,11 +1110,8 @@ function Dashboard() {
         </section>
       </div>
 
-      {/* =========================================================
-          RECENT ACTIVITY + INVENTORY WATCH
-      ========================================================= */}
-      <div className="mb-6 grid grid-cols-1 gap-6 xl:grid-cols-2">
-        {/* Recent Activity */}
+      {/* RECENT ACTIVITY (full width now) */}
+      <div className="mb-6">
         <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-orange-50 px-5 py-4">
             <div className="flex items-center gap-3">
@@ -1294,95 +1176,9 @@ function Dashboard() {
             )}
           </div>
         </section>
-
-        {/* Inventory Watch */}
-        <section className="overflow-hidden rounded-2xl border border-orange-100 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-orange-50 px-5 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100 text-orange-600">
-                <StockOutlined />
-              </div>
-              <div>
-                <h2 className="text-lg font-bold text-stone-900">Inventory Watch</h2>
-                <p className="text-xs text-stone-500">Stock levels that need monitoring</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-orange-100 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700">
-                {inventoryWatch.length} alerts
-              </span>
-              <button
-                onClick={() => navigateTo("/inventory")}
-                className="cursor-pointer border-none bg-transparent text-xs font-semibold text-orange-600 transition-colors"
-                onMouseEnter={e => e.currentTarget.style.opacity = "0.75"}
-                onMouseLeave={e => e.currentTarget.style.opacity = "1"}
-              >
-                Full Stock Room →
-              </button>
-            </div>
-          </div>
-
-          <div className="p-4">
-            {inventoryWatch.length === 0 ? (
-              <div className="py-10 text-center">
-                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-500">
-                  <CheckCircleOutlined style={{ fontSize: 20 }} />
-                </div>
-                <p className="text-base font-semibold text-stone-700">Inventory looks healthy</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {inventoryWatch.map((it) => (
-                  <div
-                    key={it.name}
-                    className="rounded-xl border border-orange-100 bg-orange-50/40 p-3"
-                  >
-                    <div className="mb-2 flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-[13px] font-semibold text-stone-700">{it.name}</p>
-                        <p className="text-[11px] text-stone-500">
-                          {it.qty} remaining · minimum {it.min}
-                        </p>
-                      </div>
-                      <span
-                        className="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold"
-                        style={{ background: `${it.color}1a`, color: it.color }}
-                      >
-                        {it.status}
-                      </span>
-                    </div>
-                    <div className="h-1.5 overflow-hidden rounded-full bg-[#F5EDE0]">
-                      <div
-                        className={`h-full rounded-full ${it.status === "Healthy"
-                          ? "bg-linear-to-r from-[#22C55E] to-[#16A34A]"
-                          : "bg-linear-to-r from-[#EA580C] to-[#F59E0B]"
-                          }`}
-                        style={{ width: `${it.pct}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-                {lowStockItems.length > 0 && (
-                  <button
-                    onClick={() => setShowLowStockModal(true)}
-                    className="flex w-full cursor-pointer items-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-xs font-semibold text-red-600 transition-colors"
-                    style={{ background: RED_SOFT }}
-                    onMouseEnter={e => e.currentTarget.style.background = "rgba(239,68,68,0.22)"}
-                    onMouseLeave={e => e.currentTarget.style.background = RED_SOFT}
-                  >
-                    <WarningOutlined />
-                    View all {lowStockItems.length} low-stock alert{lowStockItems.length > 1 ? "s" : ""}
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        </section>
       </div>
 
-      {/* =========================================================
-          BRANCH SECTION HEADER — with Add Branch button
-      ========================================================= */}
+      {/* BRANCH SECTION HEADER */}
       <section className="mb-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -1417,9 +1213,7 @@ function Dashboard() {
         </div>
       </section>
 
-      {/* =========================================================
-          BRANCHES GRID
-      ========================================================= */}
+      {/* BRANCHES GRID */}
       {loading ? (
         <div className="rounded-2xl border border-orange-100 bg-white py-16 shadow-sm">
           <Loading text="Loading branches..." />
@@ -1524,110 +1318,7 @@ function Dashboard() {
         </Row>
       )}
 
-      {/* =========================================================
-          LOW STOCK MODAL
-      ========================================================= */}
-      <Modal
-        title={
-          <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-red-100 text-red-600">
-              <WarningOutlined />
-            </div>
-            <div>
-              <p className="font-bold text-stone-900">Low Stock Alert</p>
-              <p className="text-xs font-normal text-stone-500">
-                Inventory requires attention
-              </p>
-            </div>
-          </div>
-        }
-        open={showLowStockModal}
-        onCancel={() => setShowLowStockModal(false)}
-        footer={
-          <div className="flex justify-end gap-2">
-            <Button
-              onClick={() => {
-                setDismissedLowStock(true);
-                sessionStorage.setItem("dismissed_low_stock", "true");
-                setShowLowStockModal(false);
-              }}
-              className="rounded-xl!"
-            >
-              Dismiss
-            </Button>
-
-            <Button
-              type="primary"
-              danger
-              onClick={() => {
-                setShowLowStockModal(false);
-                navigate("/inventory");
-              }}
-              className="rounded-xl! border-none! bg-red-600!"
-            >
-              View Inventory
-            </Button>
-          </div>
-        }
-        width={650}
-        className="rounded-2xl"
-      >
-        <div className="mb-4 rounded-xl bg-red-50 p-4">
-          <p className="mb-0 text-sm text-red-700">
-            <WarningOutlined className="mr-2" />
-            {lowStockItems.length} product
-            {lowStockItems.length > 1 ? "s are" : " is"} running low on stock.
-          </p>
-        </div>
-
-        <div className="max-h-80 overflow-auto rounded-xl border border-stone-100">
-          <table className="w-full text-sm">
-            <thead className="sticky top-0 bg-stone-50">
-              <tr className="border-b border-stone-100">
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-stone-400">
-                  Product
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-stone-400">
-                  Branch
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-stone-400">
-                  Qty
-                </th>
-                <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-stone-400">
-                  Min
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {lowStockItems.map((item, i) => (
-                <tr key={i} className="border-b border-stone-50 last:border-0">
-                  <td className="px-4 py-3 text-stone-800">
-                    <div className="flex items-center gap-2">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50 text-orange-500">
-                        <ShoppingCartOutlined />
-                      </div>
-                      <span className="max-w-40 truncate font-medium">
-                        {item.product_name}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-stone-600">{item.branch_name}</td>
-                  <td className="px-4 py-3 text-right font-bold text-red-600">
-                    {item.quantity}
-                  </td>
-                  <td className="px-4 py-3 text-right text-stone-500">
-                    {item.minimum_stock}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Modal>
-
-      {/* =========================================================
-          ADD BRANCH MODAL
-      ========================================================= */}
+      {/* ADD BRANCH MODAL */}
       <Modal
         title={
           <div className="flex items-center gap-2">

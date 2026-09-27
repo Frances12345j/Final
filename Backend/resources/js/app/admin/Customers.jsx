@@ -179,7 +179,7 @@ const itemColumns = [
     key: "price",
     width: 100,
     className: "text-right",
-    render: (val) => `₱${Number(val).toFixed(2)}`,
+    render: (val) => `₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`,
   },
   {
     title: "Total",
@@ -187,7 +187,7 @@ const itemColumns = [
     key: "total",
     width: 100,
     className: "text-right",
-    render: (val) => <Text strong>₱${Number(val).toFixed(2)}</Text>,
+    render: (val) => <Text strong>₱${Number(val || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>,
   },
 ];
 
@@ -300,7 +300,7 @@ function Customers() {
       className: "text-right",
       render: (v) => (
         <Text strong style={{ color: ACCENT }}>
-          ₱{Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          ₱{Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
         </Text>
       ),
     },
@@ -361,10 +361,10 @@ function Customers() {
       render: (_, r) => (
         <Space orientation="vertical" size={0}>
           <Text style={{ fontSize: 12, color: TEXT }}>
-            Cash: ₱{Number(r.cash_collected || 0).toFixed(2)}
+            Cash: ₱{Number(r.cash_collected || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
           </Text>
           <Text style={{ fontSize: 12, color: TEXT }}>
-            Change: ₱{Number(r.change_given || 0).toFixed(2)}
+            Change: ₱{Number(r.change_given || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
           </Text>
         </Space>
       ),
@@ -376,7 +376,7 @@ function Customers() {
       width: 100,
       className: "text-right",
       sorter: (a, b) => a.total - b.total,
-      render: (v) => <Text strong style={{ color: ACCENT }}>₱{Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>,
+      render: (v) => <Text strong style={{ color: ACCENT }}>₱{Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>,
     },
   ];
 
@@ -425,7 +425,7 @@ function Customers() {
       width: 100,
       className: "text-right",
       sorter: (a, b) => a.total - b.total,
-      render: (v) => <Text strong style={{ color: ACCENT }}>₱{Number(v).toLocaleString(undefined, { minimumFractionDigits: 2 })}</Text>,
+      render: (v) => <Text strong style={{ color: ACCENT }}>₱{Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>,
     },
     {
       title: "Date",
@@ -458,7 +458,7 @@ function Customers() {
                 <Text strong>{type === "sale" ? "Sale Total" : "Order Total"}:</Text>
               </Table.Summary.Cell>
               <Table.Summary.Cell index={1} className="text-right">
-                <Text strong>₱{Number(record.total).toFixed(2)}</Text>
+                <Text strong>₱{Number(record.total || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</Text>
               </Table.Summary.Cell>
             </Table.Summary.Row>
           </Table.Summary>
@@ -567,7 +567,7 @@ function Customers() {
                 <Descriptions.Item label="Address" span={2}>{customerDetail.customer.address || "-"}</Descriptions.Item>
                 <Descriptions.Item label="Total Spent">
                   <Text strong style={{ color: ACCENT }}>
-                    ₱{Number(customerDetail.customer.total_spent).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    ₱{Number(customerDetail.customer.total_spent).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
                   </Text>
                 </Descriptions.Item>
                 <Descriptions.Item label="Orders / Sales">
@@ -632,8 +632,8 @@ function Customers() {
                         )}
                         {r.notes && <Text style={{ fontSize: 12, color: TEXT }}>Notes: {r.notes}</Text>}
                         <Text style={{ fontSize: 12, color: TEXT }}>
-                          Subtotal: ₱{Number(r.subtotal || 0).toFixed(2)}
-                          {Number(r.delivery_fee || 0) > 0 && ` • Delivery Fee: ₱${Number(r.delivery_fee).toFixed(2)}`}
+                          Subtotal: ₱{Number(r.subtotal || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                          {Number(r.delivery_fee || 0) > 0 && ` • Delivery Fee: ₱${Number(r.delivery_fee).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                         </Text>
                         {expandedRowRender(r, "order")}
                       </Space>

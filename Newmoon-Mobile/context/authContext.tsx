@@ -79,7 +79,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const token = await getToken();
       const storedUser = await getUser();
-      if (token && storedUser) {
+      if (token) {
         setSignedOut(false);
         try {
           const meResponse = await api.get('/me');
@@ -91,6 +91,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setIsAuthenticated(false);
             return;
           }
+          if (serverUser) {
+            await saveUser(serverUser);
+          }
           setUser(serverUser || storedUser);
           setUserType(resolvedType);
           setIsAuthenticated(true);
@@ -100,12 +103,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             await deleteToken();
             await deleteUser();
             setIsAuthenticated(false);
-          } else {
+          } else if (storedUser) {
             setUser(storedUser);
             setUserType(
               normalizeUserType(String(storedUser?.userType || storedUser?.role || '')) || null
             );
             setIsAuthenticated(true);
+          } else {
+            setIsAuthenticated(false);
           }
         }
       }

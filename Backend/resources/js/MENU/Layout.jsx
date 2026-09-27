@@ -1,5 +1,6 @@
 import React from "react";
 import MenuSidebar from "./Sidebar";
+import LowStockAlertModal from "../components/LowStockAlertModal.jsx";
 
 function MenuLayout({ children }) {
   return (
@@ -18,6 +19,7 @@ function MenuLayout({ children }) {
       >
         {children}
       </div>
+      <LowStockAlertModal />
     </div>
   );
 }

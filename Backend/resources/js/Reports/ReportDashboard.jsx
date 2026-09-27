@@ -200,7 +200,7 @@ const ReportDashboard = () => {
 
                     <Statistic
                       value={dashboardData.total_revenue}
-                      formatter={(value) => `₱${Number(value).toLocaleString(undefined, { minimumFractionDigits: 2 })}`}
+                      formatter={(value) => `₱${Number(value).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                       styles={{ content: { color: "#FFFFFF", fontWeight: 700, fontSize: 22 } }}
                     />
                   </div>

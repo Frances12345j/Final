@@ -296,7 +296,7 @@ function AttendanceView() {
       title: "Daily Rate",
       key: "daily_rate",
       align: "right",
-      render: (_, r) => <span className="font-medium" style={{ color: ACCENT }}>₱{r.daily_rate?.toFixed(2) || "0.00"}</span>,
+      render: (_, r) => <span className="font-medium" style={{ color: ACCENT }}>₱{r.daily_rate != null ? Number(r.daily_rate).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : "0"}</span>,
     },
   ];
 

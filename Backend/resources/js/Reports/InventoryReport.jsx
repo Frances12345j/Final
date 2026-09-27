@@ -32,14 +32,16 @@ import {
 import dayjs from "dayjs";
 import { api } from "../config/api";
 import { clientPagination, serverPagination } from "../components/Pagination";
+import { useLowStock } from "../context/LowStockContext";
 
 const { Text, Title } = Typography;
 const { RangePicker } = DatePicker;
 
 const fmtPeso = (value) =>
-  `${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+  `${Number(value || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
 const InventoryReport = () => {
+  const { openModal: openLowStockModal } = useLowStock();
   const [loading, setLoading] = useState(false);
   const [inventoryData, setInventoryData] = useState([]);
   const [movements, setMovements] = useState([]);
@@ -60,16 +62,6 @@ const InventoryReport = () => {
   const [reportLoading, setReportLoading] = useState(false);
   const [reportError, setReportError] = useState(null);
   const [expenseRows, setExpenseRows] = useState([]);
-  const [productFilter, setProductFilter] = useState("all"); // all | lechon | liempo
-
-  const filteredReportRows = reportRows.filter((row) => {
-    if (productFilter === "lechon") return Number(row.lechon_manok) > 0;
-    if (productFilter === "liempo") return Number(row.liempo) > 0;
-    return true;
-  });
-
-  const showLechon = productFilter !== "liempo";
-  const showLiempo = productFilter !== "lechon";
 
   const fetchDeliveryExpenseReport = async () => {
     setReportLoading(true);
@@ -87,9 +79,39 @@ const InventoryReport = () => {
         api.get("/expenses", { params }),
       ]);
 
-      setReportRows(reportRes.data?.data || []);
+      const rawData = reportRes.data?.data || [];
+      const flatRows = [];
+      rawData.forEach((group) => {
+        if (Array.isArray(group.products) && group.products.length > 0) {
+          group.products.forEach((p, idx) => {
+            flatRows.push({
+              key: `${group.date}-${group.branch_id}-${p.product_id || idx}`,
+              date: group.date,
+              branch_id: group.branch_id,
+              branch_name: group.branch_name,
+              product_name: p.name,
+              product_id: p.product_id,
+              quantity: p.quantity,
+              expense: p.expense,
+              is_received: p.is_received,
+            });
+          });
+        } else {
+          flatRows.push({
+            key: `${group.date}-${group.branch_id}`,
+            date: group.date,
+            branch_id: group.branch_id,
+            branch_name: group.branch_name,
+            product_name: group.product_name || "-",
+            quantity: group.total_quantity || 0,
+            expense: group.expenses || 0,
+          });
+        }
+      });
+
+      setReportRows(flatRows);
       setReportTotals(
-        reportRes.data?.totals || { total_lechon_manok: 0, total_liempo: 0, total_expenses: 0 }
+        reportRes.data?.totals || { total_quantity: 0, total_expenses: 0 }
       );
       setExpenseRows(expensesRes.data?.data || []);
     } catch (err) {
@@ -120,7 +142,7 @@ const InventoryReport = () => {
       ]);
 
       const inventory = inventoryRes.data || {};
-      
+
       setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : (branchesRes.data?.data || []));
       setInventoryData(inventory.data || []);
       setMovements(inventory.movements || []);
@@ -212,7 +234,7 @@ const InventoryReport = () => {
               percent={Math.min(100, percentage)}
               strokeColor={{ "0%": "#F97316", "100%": "#D97706" }}
               size="small"
-              format={() => stock}
+              format={() => Number(stock || 0).toLocaleString()}
             />
           </div>
         );
@@ -223,6 +245,7 @@ const InventoryReport = () => {
       dataIndex: "reorder_level",
       key: "reorder_level",
       align: "center",
+      render: (level) => Number(level || 0).toLocaleString(),
     },
     {
       title: "Unit Cost",
@@ -230,7 +253,7 @@ const InventoryReport = () => {
       key: "unit_cost",
       render: (cost) => {
         const numCost = Number(cost);
-        return cost !== null && cost !== undefined && !Number.isNaN(numCost) ? `₱${numCost.toFixed(2)}` : "-";
+        return cost !== null && cost !== undefined && !Number.isNaN(numCost) ? `₱${fmtPeso(numCost)}` : "-";
       },
     },
     {
@@ -242,7 +265,7 @@ const InventoryReport = () => {
         const numValue = Number(value);
         return value !== null && value !== undefined && !Number.isNaN(numValue) ? (
           <Text strong style={{ color: "#EA580C" }}>
-            ₱{numValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+            ₱{fmtPeso(numValue)}
           </Text>
         ) : "-";
       },
@@ -318,92 +341,81 @@ const InventoryReport = () => {
   ];
 
   const dateColumn = {
-      title: "Date",
-      dataIndex: "date",
-      key: "date",
-      sorter: (a, b) => dayjs(a.date).unix() - dayjs(b.date).unix(),
-      render: (date) => <Text strong>{dayjs(date).format("MMM DD, YYYY")}</Text>,
-    };
-
-  const branchColumn = {
-      title: "Branch",
-      dataIndex: "branch_name",
-      key: "branch_name",
-      render: (name) => <Text>{name}</Text>,
-    };
-
-  const lechonColumn = {
-      title: "Lechon Manok",
-      dataIndex: "lechon_manok",
-      key: "lechon_manok",
-      align: "right",
-      render: (value) => (
-        <Text strong>{Number(value || 0).toLocaleString()} pcs</Text>
-      ),
-    };
-
-  const liempoColumn = {
-      title: "Liempo",
-      dataIndex: "liempo",
-      key: "liempo",
-      align: "right",
-      render: (value) => (
-        <Text strong>{Number(value || 0).toLocaleString()} pcs</Text>
-      ),
-    };
-
-  // Expense shown in a row / total: follows the product filter so the column
-  // always matches the products currently listed.
-  const rowExpense = (record) => {
-    if (productFilter === "lechon") return Number(record.lechon_expense || 0);
-    if (productFilter === "liempo") return Number(record.liempo_expense || 0);
-    return Number(record.expenses || 0);
+    title: "Date",
+    dataIndex: "date",
+    key: "date",
+    sorter: (a, b) => dayjs(a.date).unix() - dayjs(b.date).unix(),
+    render: (date) => <Text strong>{dayjs(date).format("MMM DD, YYYY")}</Text>,
   };
 
-  const totalExpense = () => {
-    if (productFilter === "lechon") return Number(reportTotals.total_lechon_expense || 0);
-    if (productFilter === "liempo") return Number(reportTotals.total_liempo_expense || 0);
-    return Number(reportTotals.total_expenses || 0);
+  const branchColumn = {
+    title: "Branch",
+    dataIndex: "branch_name",
+    key: "branch_name",
+    render: (name) => <Text>{name}</Text>,
+  };
+
+  // Product column: shows which product was delivered
+  const productColumn = {
+    title: "Product",
+    dataIndex: "product_name",
+    key: "product_name",
+    sorter: (a, b) => (a.product_name || "").localeCompare(b.product_name || ""),
+    render: (name, record) => {
+      if (!name || name === "-") {
+        return <Text type="secondary">-</Text>;
+      }
+      return (
+        <Tag
+          color={record.is_received === false ? "gold" : "orange"}
+          className="font-medium"
+        >
+          {name}
+          {record.is_received === false && (
+            <span className="ml-1 text-[11px] opacity-80 font-normal">(In Transit)</span>
+          )}
+        </Tag>
+      );
+    },
+  };
+
+  // Qty column: shows corresponding quantity for each product
+  const qtyColumn = {
+    title: "Qty",
+    dataIndex: "quantity",
+    key: "quantity",
+    align: "right",
+    sorter: (a, b) => Number(a.quantity || 0) - Number(b.quantity || 0),
+    render: (qty) => (
+      <Text strong>{Number(qty || 0).toLocaleString()} pcs</Text>
+    ),
   };
 
   const expensesColumn = {
-      title: (
-        <Space size={4}>
-          <span>Expenses</span>
-          <Tooltip title="Computed from cost per unit: received quantity x cost per unit of each delivery">
-            <AccountBookOutlined className="text-orange-400" />
-          </Tooltip>
-        </Space>
-      ),
-      dataIndex: "expenses",
-      key: "expenses",
-      align: "right",
-      sorter: (a, b) => rowExpense(a) - rowExpense(b),
-      render: (value, record) => (
-        <Tooltip
-          title={
-            <div>
-              {Number(record.lechon_manok || 0) > 0 && (
-                <div>Lechon Manok: ₱{fmtPeso(record.lechon_expense)}</div>
-              )}
-              {Number(record.liempo || 0) > 0 && (
-                <div>Liempo: ₱{fmtPeso(record.liempo_expense)}</div>
-              )}
-            </div>
-          }
-        >
-          <Text strong style={{ color: "#EA580C" }}>
-            ₱{fmtPeso(rowExpense(record))}
-          </Text>
+    title: (
+      <Space size={4}>
+        <span>Expenses</span>
+        <Tooltip title="Computed from cost per unit: quantity x cost per unit of each delivery">
+          <AccountBookOutlined className="text-orange-400" />
         </Tooltip>
-      ),
-    };
+      </Space>
+    ),
+    dataIndex: "expense",
+    key: "expense",
+    align: "right",
+    sorter: (a, b) => Number(a.expense || 0) - Number(b.expense || 0),
+    render: (expense) => (
+      <Text strong style={{ color: "#EA580C" }}>
+        ₱{fmtPeso(expense)}
+      </Text>
+    ),
+  };
 
   const reportColumns = [
     dateColumn,
     branchColumn,
-    ...(showLechon ? [lechonColumn] : []),
-    ...(showLiempo ? [liempoColumn] : []),
+    productColumn,
+    qtyColumn,
     expensesColumn,
   ];
 
@@ -531,11 +543,15 @@ const InventoryReport = () => {
               <div className="min-w-0">
                 <p className="text-white/50 text-xs">Total Value</p>
                 <p className="text-orange-300 font-bold text-lg leading-tight">
-                  ₱{Number(totalValue).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  ₱{fmtPeso(totalValue)}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm">
+            <div
+              onClick={openLowStockModal}
+              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/6 px-4 py-3 backdrop-blur-sm cursor-pointer hover:bg-white/10 transition-colors"
+              title="Click to view Low Stock Alert Modal"
+            >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-amber-500/15">
                 <WarningOutlined className="text-amber-400" />
               </div>
@@ -561,21 +577,38 @@ const InventoryReport = () => {
         {/* Low Stock Alert */}
         {lowStockCount > 0 && showLowStockAlert && (
           <Col span={24}>
-            <div className="flex items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3">
-              <div className="flex items-start gap-3">
-                <WarningOutlined className="mt-1 text-amber-500" />
+            <div className="flex items-start justify-between gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 shadow-xs">
+              <div
+                className="flex items-start gap-3 cursor-pointer flex-1"
+                onClick={openLowStockModal}
+              >
+                <WarningOutlined className="mt-1 text-amber-500 text-base" />
                 <div>
-                  <p className="font-semibold text-amber-800">{lowStockCount} items are below reorder level</p>
-                  <p className="text-sm text-amber-700/80">These items need to be restocked soon to avoid stockouts.</p>
+                  <p className="font-semibold text-amber-800 mb-0.5">
+                    {lowStockCount} items are below reorder level
+                  </p>
+                  <p className="text-sm text-amber-700/80 mb-0">
+                    These items need to be restocked soon to avoid stockouts. Click to view modal.
+                  </p>
                 </div>
               </div>
-              <button
-                onClick={() => setShowLowStockAlert(false)}
-                className="mt-1 text-amber-500 transition-colors hover:text-amber-700"
-                aria-label="Close alert"
-              >
-                <CloseOutlined />
-              </button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="small"
+                  type="primary"
+                  onClick={openLowStockModal}
+                  className="rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-semibold text-xs border-none"
+                >
+                  View Modal
+                </Button>
+                <button
+                  onClick={() => setShowLowStockAlert(false)}
+                  className="mt-0.5 text-amber-500 transition-colors hover:text-amber-700 p-1"
+                  aria-label="Close alert"
+                >
+                  <CloseOutlined />
+                </button>
+              </div>
             </div>
           </Col>
         )}
@@ -598,7 +631,7 @@ const InventoryReport = () => {
                 style={{ width: 200 }}
                 placeholder="All Branches"
                 allowClear
-                className="h-11! rounded-xl! border-stone-200! hover:border-orange-300! focus:border-orange-500!"
+                className="h-11! rounded-xl! border-stone-200! hover:border-orange-300!"
                 value={selectedBranch}
                 onChange={setSelectedBranch}
               >
@@ -612,13 +645,13 @@ const InventoryReport = () => {
               <RangePicker
                 value={dateRange}
                 onChange={(dates) => setDateRange(dates || null)}
-                className="h-11! rounded-xl! border-stone-200! hover:border-orange-300! focus:border-orange-500!"
+                className="h-11! rounded-xl! border-stone-200! hover:border-orange-300!"
               />
               <Input
                 placeholder="Search items..."
                 prefix={<SearchOutlined />}
                 style={{ width: 250 }}
-                className="h-11! rounded-xl! border-stone-200! hover:border-orange-300! focus:border-orange-500!"
+                className="h-11! rounded-xl! border-stone-200! hover:border-orange-300!"
                 value={searchText}
                 onChange={(e) => setSearchText(e.target.value)}
               />
@@ -645,26 +678,13 @@ const InventoryReport = () => {
                 <div>
                   <h2 className="text-lg font-bold text-stone-900">Inventory Deliveries &amp; Expenses</h2>
                   <p className="text-xs text-stone-500">
-                    Lechon Manok / Liempo received, with expenses based on cost per unit
+                    Products received, with expenses based on cost per unit
                   </p>
                 </div>
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-semibold text-stone-700">Product:</span>
-                <Select
-                  value={productFilter}
-                  onChange={setProductFilter}
-                  style={{ width: 180 }}
-                  className="h-10! rounded-xl! border-stone-200! hover:border-orange-300! focus:border-orange-500!"
-                >
-                  <Select.Option value="all">All</Select.Option>
-                  <Select.Option value="lechon">Lechon Manok</Select.Option>
-                  <Select.Option value="liempo">Liempo</Select.Option>
-                </Select>
-                <span className="rounded-full border border-orange-100 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700">
-                  {filteredReportRows.length} day(s)
-                </span>
-              </div>
+              <span className="rounded-full border border-orange-100 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700">
+                {reportRows.length} item(s)
+              </span>
             </div>
 
             <div className="p-4">
@@ -691,36 +711,36 @@ const InventoryReport = () => {
               ) : (
                 <Table
                   columns={reportColumns}
-                  dataSource={filteredReportRows}
-                  rowKey={(record) => `${record.date}-${record.branch_id}`}
+                  dataSource={reportRows}
+                  rowKey={(record) => record.key || `${record.date}-${record.branch_id}-${record.product_id}`}
                   loading={reportLoading}
-                  pagination={clientPagination({ label: "days" })}
+                  pagination={clientPagination({ label: "deliveries" })}
                   scroll={{ x: true }}
-                  summary={() => (
-                    <Table.Summary fixed>
-                      <Table.Summary.Row className="bg-orange-50!">
-                        <Table.Summary.Cell index={0}>
-                          <Text strong>TOTAL</Text>
-                        </Table.Summary.Cell>
-                        <Table.Summary.Cell index={1} />
-                        {showLechon && (
-                          <Table.Summary.Cell index={2} align="right">
-                            <Text strong>{Number(reportTotals.total_lechon_manok || 0).toLocaleString()} pcs</Text>
+                  summary={() => {
+                    const totalQty = Number(
+                      reportTotals.total_quantity ??
+                      (Number(reportTotals.total_lechon_manok || 0) + Number(reportTotals.total_liempo || 0))
+                    );
+                    return (
+                      <Table.Summary fixed>
+                        <Table.Summary.Row className="bg-orange-50!">
+                          <Table.Summary.Cell index={0}>
+                            <Text strong>TOTAL</Text>
                           </Table.Summary.Cell>
-                        )}
-                        {showLiempo && (
-                          <Table.Summary.Cell index={showLechon ? 3 : 2} align="right">
-                            <Text strong>{Number(reportTotals.total_liempo || 0).toLocaleString()} pcs</Text>
+                          <Table.Summary.Cell index={1} />
+                          <Table.Summary.Cell index={2} />
+                          <Table.Summary.Cell index={3} align="right">
+                            <Text strong>{totalQty.toLocaleString()} pcs</Text>
                           </Table.Summary.Cell>
-                        )}
-                        <Table.Summary.Cell index={showLechon && showLiempo ? 4 : 3} align="right">
-                          <Text strong style={{ color: "#EA580C" }}>
-                            ₱{fmtPeso(totalExpense())}
-                          </Text>
-                        </Table.Summary.Cell>
-                      </Table.Summary.Row>
-                    </Table.Summary>
-                  )}
+                          <Table.Summary.Cell index={4} align="right">
+                            <Text strong style={{ color: "#EA580C" }}>
+                              ₱{fmtPeso(reportTotals.total_expenses)}
+                            </Text>
+                          </Table.Summary.Cell>
+                        </Table.Summary.Row>
+                      </Table.Summary>
+                    );
+                  }}
                   locale={{
                     emptyText: (
                       <div className="py-10 text-center">
@@ -729,7 +749,7 @@ const InventoryReport = () => {
                         </div>
                         <p className="text-base font-semibold text-stone-700">No inventory records found</p>
                         <p className="mt-1 text-sm text-stone-400">
-                          Adjust the date, branch, or product filters and try again.
+                          Adjust the date or branch filters and try again.
                         </p>
                       </div>
                     ),

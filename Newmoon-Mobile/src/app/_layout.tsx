@@ -24,38 +24,38 @@ export default function RootLayout() {
     return (
         <QueryClientProvider client={queryClient}>
             <AuthProvider>
-                    <Stack
-                        screenOptions={{
-                            headerShown: false,
-                            animation: 'none',
-                        }}
-                        initialRouteName="Login"
-                    >
-                        <Stack.Screen
-                            name='index'
-                            options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                            name='Login'
-                            options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                            name='Staff'
-                            options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                            name='Registration'
-                            options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                            name='Customer'
-                            options={{ headerShown: false }}
-                        />
-                        <Stack.Screen
-                            name='Rider'
-                            options={{ headerShown: false }}
-                        />
-                    </Stack>
+                <Stack
+                    screenOptions={{
+                        headerShown: false,
+                        animation: 'none',
+                    }}
+                    initialRouteName="Login"
+                >
+                    <Stack.Screen
+                        name='index'
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name='Login'
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name='Staff'
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name='Registration'
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name='Customer'
+                        options={{ headerShown: false }}
+                    />
+                    <Stack.Screen
+                        name='Rider'
+                        options={{ headerShown: false }}
+                    />
+                </Stack>
             </AuthProvider>
         </QueryClientProvider>
     )

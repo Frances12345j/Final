@@ -357,8 +357,8 @@ function BranchDetails() {
   );
 
   const formatCurrency = (amount) => {
-    if (!amount && amount !== 0) return '₱0.00';
-    return `₱${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    if (!amount && amount !== 0) return '₱0';
+    return `₱${Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   };
 
   const getStatusTag = (status) => {

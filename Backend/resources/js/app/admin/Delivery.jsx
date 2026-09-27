@@ -381,7 +381,7 @@ const DeliveryReport = () => {
       key: "total",
       width: 110,
       align: "right",
-      render: (val) => <span className="font-semibold" style={{ color: ACCENT }}>₱{Number(val).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>,
+      render: (val) => <span className="font-semibold" style={{ color: ACCENT }}>₱{Number(val).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>,
     },
     {
       title: "Payment",
@@ -554,7 +554,7 @@ const DeliveryReport = () => {
                 <Tag>{selectedOrder.payment_method?.toUpperCase() || "N/A"}</Tag>
               </Descriptions.Item>
               <Descriptions.Item label="Total">
-                <span className="text-lg font-bold" style={{ color: ACCENT }}>₱{Number(selectedOrder.total).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="text-lg font-bold" style={{ color: ACCENT }}>₱{Number(selectedOrder.total).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
               </Descriptions.Item>
               <Descriptions.Item label="Items">{selectedOrder.items_count}</Descriptions.Item>
               <Descriptions.Item label="Date">{dayjs(selectedOrder.created_at).format("MMM D, YYYY h:mm A")}</Descriptions.Item>

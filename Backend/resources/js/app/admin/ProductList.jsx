@@ -113,7 +113,7 @@ function StockInForm({ form, product, branches, onSubmit, onCancel, currentUserN
         <Col span={12}>
           <Form.Item label={fieldLabel("Total Cost (₱)")}>
             <Input
-              value={totalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              value={Number(totalCost || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
               disabled
               className="rounded-xl bg-[#FFFBF5] font-semibold text-green-600"
             />
@@ -164,9 +164,6 @@ function StockInForm({ form, product, branches, onSubmit, onCancel, currentUserN
 
 const PULL_OUT_REASONS = ["Sales", "Damage", "Pull-out", "Spoilage", "Expired", "Wastage", "Breakage", "Adjustment", "Other"];
 
-// The product families the Inventory Deliveries & Expenses report groups by.
-// Keep in sync with App\Models\Product::INVENTORY_CATEGORY_*.
-const PRODUCT_CATEGORIES = ["Lechon Manok", "Liempo"];
 
 function PullOutForm({ form, product, branches, onSubmit, onCancel, currentUserName, allowedReasons }) {
   const fieldLabel = (text) => <span className="text-[#451A03] font-medium">{text}</span>;
@@ -424,7 +421,6 @@ function ProductList() {
         const formData = new FormData();
         formData.append('name', values.name);
         formData.append('price', values.price);
-        formData.append('category', values.category || '');
         formData.append('image', file);
         values.branches?.forEach((b) => formData.append('branches[]', b));
         payload = formData;
@@ -432,7 +428,6 @@ function ProductList() {
         payload = {
           name: values.name,
           price: values.price,
-          category: values.category || null,
           branches: values.branches,
         };
       }
@@ -550,14 +545,12 @@ function ProductList() {
         formData.append('_method', 'PUT');
         formData.append('name', values.name);
         formData.append('price', values.price);
-        formData.append('category', values.category || '');
         formData.append('image', file);
         await api.post(`/products/${productId}`, formData);
       } else {
         await api.put(`/products/${productId}`, {
           name: values.name,
           price: values.price,
-          category: values.category || null,
         });
       }
 
@@ -673,7 +666,7 @@ function ProductList() {
   const validPrices = products.map(parseProductPrice).filter((n) => Number.isFinite(n));
   const avgPrice = validPrices.length > 0 ? validPrices.reduce((a, b) => a + b, 0) / validPrices.length : 0;
 
-  const formatCurrency = (amount) => `₱${amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+  const formatCurrency = (amount) => `₱${Number(amount || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
   const columns = [
     {
@@ -815,7 +808,6 @@ function ProductList() {
                 editForm.setFieldsValue({
                   name: r.product.name,
                   price: r.product.price,
-                  category: r.product.category || undefined,
                 });
                 editImageFileRef.current = null;
                 setHasEditImage(false);
@@ -1031,17 +1023,6 @@ function ProductList() {
               className="rounded-xl border border-[#F5EDE0]"
             />
           </Form.Item>
-          <Form.Item
-            label={<span className="text-[#451A03] font-medium">Category</span>}
-            name="category"
-            extra="Decides which column this product appears under in the Inventory Deliveries &amp; Expenses report."
-          >
-            <Select allowClear placeholder="Select category" className="rounded-xl border border-[#F5EDE0]">
-              {PRODUCT_CATEGORIES.map((category) => (
-                <Select.Option key={category} value={category}>{category}</Select.Option>
-              ))}
-            </Select>
-          </Form.Item>
           <div className="mb-4">
             <div className="font-medium text-[#451A03] mb-1">Product Image (optional)</div>
 
@@ -1135,17 +1116,6 @@ function ProductList() {
               placeholder="Enter price"
               className="rounded-xl border border-[#F5EDE0]"
             />
-          </Form.Item>
-          <Form.Item
-            label={<span className="text-[#451A03] font-medium">Category</span>}
-            name="category"
-            extra="Decides which column this product appears under in the Inventory Deliveries &amp; Expenses report."
-          >
-            <Select allowClear placeholder="Select category" className="rounded-xl border border-[#F5EDE0]">
-              {PRODUCT_CATEGORIES.map((category) => (
-                <Select.Option key={category} value={category}>{category}</Select.Option>
-              ))}
-            </Select>
           </Form.Item>
           {editTarget?.image && (
 

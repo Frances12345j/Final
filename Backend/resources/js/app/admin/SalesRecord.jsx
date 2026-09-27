@@ -166,7 +166,7 @@ const GHOST_BTN = {
   fontWeight: 500,
 };
 
-const fmtCurrency = (v) => `₱${Number(v || 0).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+const fmtCurrency = (v) => `₱${Number(v || 0).toLocaleString("en-PH", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
 function SalesRecord() {
   const queryClient = useQueryClient();

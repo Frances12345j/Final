@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { isAuthenticated, isLoading: authLoading, userType, login, signOut } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, userType, login } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -46,11 +46,11 @@ export default function LoginScreen() {
   }, []);
 
   useEffect(() => {
-    // When arriving at Login screen, clear any existing session so user is forced to authenticate
-    if (isAuthenticated) {
-      signOut();
+    if (isAuthenticated && navigationReady) {
+      const redirectPath = getDashboardPath(userType || 'staff');
+      router.replace(redirectPath as any);
     }
-  }, [isAuthenticated, signOut]);
+  }, [isAuthenticated, userType, navigationReady]);
 
   useEffect(() => {
     Animated.parallel([

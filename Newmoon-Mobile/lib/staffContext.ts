@@ -94,7 +94,7 @@ export async function resolveStaffBranch(
 
   let branchId = getBranchIdFromUser(user);
   if (branchId) {
-    await saveResolvedBranchId(branchId).catch(() => {});
+    await saveResolvedBranchId(branchId).catch(() => { });
     return { user, branchId };
   }
 
@@ -102,7 +102,7 @@ export async function resolveStaffBranch(
   try {
     const cachedBranchId = await getResolvedBranchId();
     if (cachedBranchId) {
-      await saveUser({ ...user, branch_id: cachedBranchId }).catch(() => {});
+      await saveUser({ ...user, branch_id: cachedBranchId }).catch(() => { });
       return { user, branchId: cachedBranchId };
     }
   } catch (error) {
@@ -194,7 +194,7 @@ export async function cacheStaffContextAfterLogin(user: any): Promise<any> {
   }
 
   await saveUser(normalized);
-  
+
   try {
     const { user: resolved, branchId } = await resolveStaffBranch(normalized);
     if (resolved && branchId) {
@@ -206,7 +206,7 @@ export async function cacheStaffContextAfterLogin(user: any): Promise<any> {
   } catch (error) {
     console.warn('[STAFF CONTEXT] Could not resolve branch, caching basic user data:', error);
   }
-  
+
   console.log('[STAFF CONTEXT] Cached basic user data');
   return normalized;
 }

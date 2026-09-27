@@ -5,6 +5,7 @@ import { ConfigProvider } from "antd";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { spinConfig } from "./components/spinConfig.jsx";
 import AdminApp from "./AdminApp";
+import { LowStockProvider } from "./context/LowStockContext.jsx";
 import "antd/dist/reset.css";
 
 export const queryClient = new QueryClient({
@@ -25,7 +26,9 @@ if (rootElement) {
       <ConfigProvider spin={spinConfig}>
         <QueryClientProvider client={queryClient}>
           <BrowserRouter>
-            <AdminApp />
+            <LowStockProvider>
+              <AdminApp />
+            </LowStockProvider>
           </BrowserRouter>
         </QueryClientProvider>
       </ConfigProvider>

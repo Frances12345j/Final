@@ -319,7 +319,7 @@ function RequestAdmin() {
   };
 
   const formatCurrency = (amount) => {
-    return `₱${Number(amount).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `₱${Number(amount || 0).toLocaleString("en-PH", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   };
 
   const getRequestTypeTag = (type) => {

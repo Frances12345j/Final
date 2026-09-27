@@ -47,7 +47,7 @@ const { RangePicker } = DatePicker;
 // ---------- Philippine Peso formatter ----------
 const peso = (v) =>
   `₱${Number(v || 0).toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
+    minimumFractionDigits: 0,
     maximumFractionDigits: 2,
   })}`;
 

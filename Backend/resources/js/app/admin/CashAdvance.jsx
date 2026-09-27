@@ -124,7 +124,7 @@ function CashAdvance() {
 
   const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
 
-  const fmtCurrency = (v) => `₱${Number(v).toLocaleString("en-PH", { minimumFractionDigits: 2 })}`;
+  const fmtCurrency = (v) => `₱${Number(v || 0).toLocaleString("en-PH", { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 
   const columns = [
     {

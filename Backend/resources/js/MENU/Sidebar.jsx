@@ -23,9 +23,11 @@ import {
   LeftOutlined,
   RightOutlined,
   IdcardOutlined,
+  WarningOutlined,
 } from "@ant-design/icons";
 import { api } from "../config/api";
 import { getAuthUser, getAuthRole, clearAuthSession } from "../utils/authStorage";
+import { useLowStock } from "../context/LowStockContext";
 import logo from "../assets/logooos.jpg";
 
 const NAV_GROUPS = [
@@ -110,6 +112,7 @@ function Sidebar() {
 
   const user = getAuthUser() || {};
   const userRole = getAuthRole() || "admin";
+  const { lowStockCount, openModal: openLowStockModal } = useLowStock();
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -320,6 +323,56 @@ function Sidebar() {
           </div>
         )}
         {collapsed && <div style={{ height: 8, flexShrink: 0 }} />}
+
+        {/* Global Low Stock Alert Pill */}
+        {lowStockCount > 0 && (
+          <div style={{ padding: collapsed ? "2px 8px 8px" : "2px 14px 8px", flexShrink: 0 }}>
+            <Tooltip title={`${lowStockCount} items below reorder level - Click to view details`} placement="right">
+              <button
+                onClick={openLowStockModal}
+                style={{
+                  width: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: collapsed ? "center" : "space-between",
+                  gap: 8,
+                  background: "linear-gradient(135deg, rgba(234, 88, 12, 0.28) 0%, rgba(245, 158, 11, 0.38) 100%)",
+                  border: "1px solid rgba(245, 158, 11, 0.65)",
+                  borderRadius: 10,
+                  padding: collapsed ? "8px 0" : "8px 12px",
+                  color: "#FFF",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 2px 8px rgba(234, 88, 12, 0.25)",
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <WarningOutlined style={{ color: "#FBBF24", fontSize: 15 }} />
+                  {!collapsed && (
+                    <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: "-0.2px", color: "#FFF" }}>
+                      Low Stock Alert
+                    </span>
+                  )}
+                </span>
+                <span
+                  style={{
+                    background: "#EA580C",
+                    color: "#FFF",
+                    fontSize: 11,
+                    fontWeight: 800,
+                    borderRadius: 999,
+                    padding: "1px 7px",
+                    minWidth: 20,
+                    textAlign: "center",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                  }}
+                >
+                  {lowStockCount}
+                </span>
+              </button>
+            </Tooltip>
+          </div>
+        )}
 
         {/* Navigation */}
         <div className="nm-scroll" style={{ flex: 1, overflowY: "auto", overflowX: "hidden", padding: "12px 0 8px" }}>

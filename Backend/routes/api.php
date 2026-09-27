@@ -199,6 +199,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/reports/branches', [ReportController::class, 'branches']);
     Route::get('/reports/PullOut', [ReportController::class, 'PullOut']);
     Route::get('/reports/deliveries', [ReportController::class, 'deliveries']);
+    Route::get('/reports/low-stock-alert', [ReportController::class, 'lowStockAlert']);
 
     // Expenses (recorded by staff from the POS, surfaced for admin reporting)
     Route::get('/expenses/categories', [ExpenseController::class, 'categories']);

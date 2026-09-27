@@ -528,6 +528,52 @@ class ReportController extends Controller
 }
 
     /**
+     * Global Low Stock Alert
+     * GET /api/reports/low-stock-alert
+     */
+    public function lowStockAlert()
+    {
+        $stocks = \App\Models\ProductStock::with(['product', 'branch'])->get();
+
+        $lowStockItems = [];
+        foreach ($stocks as $stock) {
+            $product = $stock->product;
+            if (!$product) continue;
+
+            $quantity = (float) $stock->quantity;
+            $minStock = max((float) $stock->minimum_stock, 15);
+
+            if ($quantity < $minStock) {
+                $lowStockItems[] = [
+                    'id'            => $stock->id,
+                    'product_id'    => $product->id,
+                    'name'          => $product->name,
+                    'sku'           => $product->sku ?? '',
+                    'image'         => $product->image,
+                    'branch_id'     => $stock->branch_id,
+                    'branch_name'   => $stock->branch->name ?? 'Unknown',
+                    'current_stock' => $quantity,
+                    'reorder_level' => $minStock,
+                    'shortage'      => max(0, $minStock - $quantity),
+                    'unit_cost'     => (float) $product->price,
+                    'status'        => $quantity <= 0 ? 'Out of Stock' : 'Low Stock',
+                ];
+            }
+        }
+
+        usort($lowStockItems, function ($a, $b) {
+            $ratioA = $a['reorder_level'] > 0 ? $a['current_stock'] / $a['reorder_level'] : 0;
+            $ratioB = $b['reorder_level'] > 0 ? $b['current_stock'] / $b['reorder_level'] : 0;
+            return $ratioA <=> $ratioB;
+        });
+
+        return response()->json([
+            'count' => count($lowStockItems),
+            'items' => $lowStockItems,
+        ]);
+    }
+
+    /**
      * Attendance Report
      * GET /api/reports/attendance
      * Params: start_date, end_date, branch_id (optional)
@@ -952,14 +998,12 @@ class ReportController extends Controller
      * GET /api/reports/inventory-report
      * Params: start_date, end_date, branch_id
      *
-     * Quantity of Lechon Manok / Liempo received per PH day per branch comes
-     * from product_stock_deliveries that were actually received; the Expenses
+     * Quantity of products received per PH day per branch comes from
+     * product_stock_deliveries that were actually received; the Expenses
      * column is the delivery cost computed from cost per unit
      * (quantity x delivery cost_per_unit, falling back to the product price when
-     * no cost was recorded). Products are grouped by the category set in
-     * Products Management (see Product::inventoryCategory), so adding a product
-     * there is enough for it to show up in the right column. Staff are scoped to
-     * their assigned branch; admins see everything (or a chosen branch).
+     * no cost was recorded). Deliveries are connected directly to the product name.
+     * Staff are scoped to their assigned branch; admins see everything (or a chosen branch).
      */
     public function inventoryReport(Request $request)
     {
@@ -981,76 +1025,84 @@ class ReportController extends Controller
 
         $branchId = $staffBranchId ?? ($validated['branch_id'] ?? null);
 
-        // Identify products the way Products Management does: by the category set
-        // on the product, falling back to the name for products created before the
-        // field existed. This keeps a product such as "Atsara" from being dropped
-        // just because its name does not spell out its family.
-        $categoryIds = Product::inventoryCategoryIds();
-
-        $lechonIds = $categoryIds[Product::INVENTORY_CATEGORY_LECHON_MANOK];
-        $liempoIds = $categoryIds[Product::INVENTORY_CATEGORY_LIEMPO];
-
-        $lechonSet = $lechonIds ? implode(',', $lechonIds) : '-1';
-        $liempoSet = $liempoIds ? implode(',', $liempoIds) : '-1';
-
         $start = $validated['start_date'] ?? null;
         $end = $validated['end_date'] ?? null;
 
-        // ---------- Received inventory deliveries grouped by PH date + branch ----------
-        // Cost per unit is the value captured on the delivery (restock); legacy rows
-        // without it fall back to the product price. The cost follows the products
-        // this report covers (Lechon Manok / Liempo) so the Expenses column always
-        // matches the quantities shown beside it.
+        // ---------- Inventory deliveries grouped by date + branch + product ----------
+        // Deliveries are captured when restocked/dispatched to staff (d.restocked_at)
+        // or received by staff (d.received_at). Cost per unit is the value captured
+        // on the restock delivery; legacy rows fall back to product price.
         $unitCostSql = 'COALESCE(d.cost_per_unit, p.price, 0)';
+        $dateSql = 'DATE(COALESCE(d.restocked_at, d.received_at, d.created_at))';
 
         $deliveries = DB::table('product_stock_deliveries as d')
             ->join('branches as b', 'd.branch_id', '=', 'b.id')
             ->join('products as p', 'd.product_id', '=', 'p.id')
-            // received_at is stored/round-tripped as PH local time (Asia/Manila),
-            // so the calendar date is DATE(received_at) — do NOT CONVERT_TZ it.
             ->select(
-                DB::raw('DATE(d.received_at) as date'),
+                DB::raw("{$dateSql} as date"),
                 'd.branch_id',
                 'b.name as branch_name',
-                DB::raw("SUM(CASE WHEN d.product_id IN ({$lechonSet}) THEN d.quantity ELSE 0 END) as lechon_manok"),
-                DB::raw("SUM(CASE WHEN d.product_id IN ({$liempoSet}) THEN d.quantity ELSE 0 END) as liempo"),
-                DB::raw("SUM(CASE WHEN d.product_id IN ({$lechonSet}) THEN d.quantity * {$unitCostSql} ELSE 0 END) as lechon_expense"),
-                DB::raw("SUM(CASE WHEN d.product_id IN ({$liempoSet}) THEN d.quantity * {$unitCostSql} ELSE 0 END) as liempo_expense")
+                'p.id as product_id',
+                'p.name as product_name',
+                DB::raw('SUM(d.quantity) as quantity'),
+                DB::raw("SUM(d.quantity * {$unitCostSql}) as expense"),
+                DB::raw('MAX(CASE WHEN d.received_at IS NOT NULL THEN 1 ELSE 0 END) as is_received')
             )
-            ->whereNotNull('d.received_at')
-            ->when($start, fn ($q) => $q->where(DB::raw('DATE(d.received_at)'), '>=', $start))
-            ->when($end, fn ($q) => $q->where(DB::raw('DATE(d.received_at)'), '<=', $end))
+            ->where(function ($q) {
+                $q->whereNotNull('d.restocked_at')
+                  ->orWhereNotNull('d.received_at');
+            })
+            ->where(function ($q) {
+                $q->whereNull('d.marked_as_not_received')
+                  ->orWhere('d.marked_as_not_received', false)
+                  ->orWhere('d.marked_as_not_received', 0);
+            })
+            ->when($start, fn ($q) => $q->where(DB::raw($dateSql), '>=', $start))
+            ->when($end, fn ($q) => $q->where(DB::raw($dateSql), '<=', $end))
             ->when($branchId, fn ($q) => $q->where('d.branch_id', $branchId))
-            ->groupBy(DB::raw('DATE(d.received_at)'), 'd.branch_id', 'b.name')
+            ->groupBy(DB::raw($dateSql), 'd.branch_id', 'b.name', 'p.id', 'p.name')
+            ->orderByDesc(DB::raw($dateSql))
+            ->orderBy('b.name')
+            ->orderBy('p.name')
             ->get();
 
-        // ---------- Rows keyed by (date, branch_id); Expenses = cost per unit x qty ----------
+        // ---------- Rows keyed by (date, branch_id); each row lists the delivered products ----------
         $rows = [];
         foreach ($deliveries as $row) {
-            $lechonExpense = round((float) $row->lechon_expense, 2);
-            $liempoExpense = round((float) $row->liempo_expense, 2);
+            $key = $row->date . '|' . $row->branch_id;
+            if (!isset($rows[$key])) {
+                $rows[$key] = [
+                    'date' => $row->date,
+                    'branch_id' => (int) $row->branch_id,
+                    'branch_name' => $row->branch_name,
+                    'products' => [],
+                    'total_quantity' => 0,
+                    'expenses' => 0,
+                ];
+            }
 
-            $rows[$row->date . '|' . $row->branch_id] = [
-                'date' => $row->date,
-                'branch_id' => (int) $row->branch_id,
-                'branch_name' => $row->branch_name,
-                'lechon_manok' => (float) $row->lechon_manok,
-                'liempo' => (float) $row->liempo,
-                'lechon_expense' => $lechonExpense,
-                'liempo_expense' => $liempoExpense,
-                'expenses' => round($lechonExpense + $liempoExpense, 2),
+            $qty = (float) $row->quantity;
+            $expense = round((float) $row->expense, 2);
+
+            $rows[$key]['products'][] = [
+                'product_id' => (int) $row->product_id,
+                'name' => $row->product_name,
+                'quantity' => $qty,
+                'expense' => $expense,
+                'is_received' => (bool) $row->is_received,
             ];
+            $rows[$key]['total_quantity'] = round($rows[$key]['total_quantity'] + $qty, 2);
+            $rows[$key]['expenses'] = round($rows[$key]['expenses'] + $expense, 2);
         }
 
         // Stable two-pass sort: newest date first, then branch name ascending.
         $rows = collect($rows)->sortBy('branch_name')->sortByDesc('date')->values();
 
         $totals = [
-            'total_lechon_manok' => round($rows->sum('lechon_manok'), 2),
-            'total_liempo' => round($rows->sum('liempo'), 2),
-            'total_lechon_expense' => round($rows->sum('lechon_expense'), 2),
-            'total_liempo_expense' => round($rows->sum('liempo_expense'), 2),
+            'total_quantity' => round($rows->sum('total_quantity'), 2),
             'total_expenses' => round($rows->sum('expenses'), 2),
+            'total_lechon_manok' => round($rows->sum('total_quantity'), 2),
+            'total_liempo' => 0,
         ];
 
         return response()->json([

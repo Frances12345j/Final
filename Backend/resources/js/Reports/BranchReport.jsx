@@ -131,7 +131,7 @@ const BranchReport = () => {
       sorter: (a, b) => a.total_sales - b.total_sales,
       render: (amount) => (
         <Text strong style={{ color: "#EA580C" }}>
-          ₱{Number(amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+          ₱{Number(amount).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
         </Text>
       ),
     },
@@ -147,7 +147,7 @@ const BranchReport = () => {
       dataIndex: "avg_transaction",
       key: "avg_transaction",
       sorter: (a, b) => a.avg_transaction - b.avg_transaction,
-      render: (avg) => avg !== null && avg !== undefined ? `₱${Number(avg).toFixed(2)}` : "-",
+      render: (avg) => avg !== null && avg !== undefined ? `₱${Number(avg).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })}` : "-",
     },
     {
       title: "Staff Count",
@@ -246,7 +246,7 @@ const BranchReport = () => {
               <div className="flex items-center gap-2">
                 <DollarOutlined className="text-orange-400" />
                 <span className="text-xl font-bold text-[#FDE68A]">
-                  ₱{summary.total_revenue != null ? Number(summary.total_revenue).toLocaleString(undefined, { minimumFractionDigits: 2 }) : "-"}
+                  ₱{summary.total_revenue != null ? Number(summary.total_revenue).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : "-"}
                 </span>
               </div>
             </div>
@@ -264,7 +264,7 @@ const BranchReport = () => {
               <div className="flex items-center gap-2">
                 <ShopOutlined className="text-orange-400" />
                 <span className="text-xl font-bold text-[#FDE68A]">
-                  ₱{summary.avg_branch_revenue != null ? Number(summary.avg_branch_revenue).toLocaleString(undefined, { minimumFractionDigits: 2 }) : "-"}
+                  ₱{summary.avg_branch_revenue != null ? Number(summary.avg_branch_revenue).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : "-"}
                 </span>
               </div>
             </div>
@@ -400,7 +400,7 @@ const BranchReport = () => {
                           }}
                         />
                         <Text type="secondary">
-                          ₱{Number(item.revenue).toLocaleString(undefined, { minimumFractionDigits: 2 })} ({item.percentage}%)
+                          ₱{Number(item.revenue).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ({item.percentage}%)
                         </Text>
                       </div>
                     </Col>
