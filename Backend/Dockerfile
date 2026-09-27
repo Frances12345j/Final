@@ -64,6 +64,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN echo '<VirtualHost *:80>\n\
     ServerAdmin webmaster@localhost\n\
     DocumentRoot /var/www/html/public\n\
+    CGIPassAuth On\n\
+    SetEnvIfNoCase ^Authorization$ "(.+)" HTTP_AUTHORIZATION=$1\n\
     <Directory /var/www/html/public>\n\
         Options -Indexes +FollowSymLinks\n\
         AllowOverride All\n\
@@ -109,6 +111,9 @@ fi\n\
 if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "127.0.0.1" ]; then\n\
     echo "DB_HOST not set or points to localhost. Using SQLite fallback."\n\
     touch /var/www/html/database/database.sqlite\n\
+    sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/" /var/www/html/.env || true\n\
+    sed -i "s|^DB_DATABASE=.*|DB_DATABASE=/var/www/html/database/database.sqlite|" /var/www/html/.env || true\n\
+    sed -i "s/^DB_HOST=.*/DB_HOST=/" /var/www/html/.env || true\n\
     export DB_CONNECTION=sqlite\n\
     export DB_DATABASE=/var/www/html/database/database.sqlite\n\
 fi\n\
@@ -116,6 +121,7 @@ export SESSION_DRIVER="${SESSION_DRIVER:-file}"\n\
 export CACHE_STORE="${CACHE_STORE:-file}"\n\
 chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database\n\
 chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database\n\
+[ -f /var/www/html/database/database.sqlite ] && chmod 666 /var/www/html/database/database.sqlite\n\
 php artisan storage:link --force || true\n\
 php artisan migrate --force || true\n\
 php artisan db:seed --class=AdminSeeder --force || true\n\
