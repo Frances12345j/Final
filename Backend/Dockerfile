@@ -92,7 +92,8 @@ mkdir -p /var/www/html/storage/framework/cache/data \\\n\
          /var/www/html/storage/framework/sessions \\\n\
          /var/www/html/storage/framework/views \\\n\
          /var/www/html/storage/logs \\\n\
-         /var/www/html/bootstrap/cache\n\
+         /var/www/html/bootstrap/cache \\\n\
+         /var/www/html/database\n\
 if [ ! -f /var/www/html/.env ]; then\n\
     if [ -f /var/www/html/.env.example ]; then\n\
         cp /var/www/html/.env.example /var/www/html/.env\n\
@@ -101,16 +102,22 @@ if [ ! -f /var/www/html/.env ]; then\n\
     fi\n\
 fi\n\
 if [ -z "$APP_KEY" ]; then\n\
-    echo "APP_KEY is not set in environment. Generating application key..."\n\
+    echo "APP_KEY is not set. Generating application key..."\n\
     php artisan key:generate --force || true\n\
 fi\n\
-chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache\n\
-chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache\n\
-php artisan storage:link --force || true\n\
-if [ "$RUN_MIGRATIONS" = "true" ]; then\n\
-    echo "Running database migrations..."\n\
-    php artisan migrate --force || true\n\
+# Prevent crashes if MySQL is not configured yet\n\
+if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "127.0.0.1" ]; then\n\
+    echo "DB_HOST not set or points to localhost. Using SQLite fallback."\n\
+    touch /var/www/html/database/database.sqlite\n\
+    export DB_CONNECTION=sqlite\n\
+    export DB_DATABASE=/var/www/html/database/database.sqlite\n\
 fi\n\
+export SESSION_DRIVER="${SESSION_DRIVER:-file}"\n\
+export CACHE_STORE="${CACHE_STORE:-file}"\n\
+chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database\n\
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache /var/www/html/database\n\
+php artisan storage:link --force || true\n\
+php artisan migrate --force || true\n\
 php artisan config:clear || true\n\
 php artisan route:clear || true\n\
 php artisan view:clear || true\n\
