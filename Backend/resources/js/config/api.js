@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getAuthToken, clearAuthSession } from "@/utils/authStorage";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
 
@@ -32,14 +33,13 @@ api.get = function (url, config = {}) {
 };
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-const SESSION_KEYS = ["token", "user", "role", "isLoggedIn"];
 let endingSession = false;
 
 api.interceptors.response.use(
@@ -55,25 +55,18 @@ api.interceptors.response.use(
 
     // Only end session on a real 401/419
     if (status === 401 || status === 419) {
-      // ✅ Check kung naa pa ba'y token — kung wala, wala nay session
-      const token = localStorage.getItem("token");
+      const token = getAuthToken();
 
       if (token) {
-        // Naa pa'y token pero 401 — basin race condition o expired.
-        // Ayaw dayon i-logout — hulata ang ProtectedRoute mo-handle.
-        // Pero kung 419 (CSRF/token mismatch), i-logout gyud.
         if (status === 419) {
-          SESSION_KEYS.forEach((key) => localStorage.removeItem(key));
+          clearAuthSession();
           if (!endingSession) {
             endingSession = true;
             window.location.replace("/login");
           }
         }
-        // status === 401 + naa pa'y token = ayaw i-logout
-        // (basin nag-load pa ang bag-ong token, o stale request)
       } else {
-        // Wala nay token — session gyud nawala
-        SESSION_KEYS.forEach((key) => localStorage.removeItem(key));
+        clearAuthSession();
         if (!endingSession) {
           endingSession = true;
           window.location.replace("/login");

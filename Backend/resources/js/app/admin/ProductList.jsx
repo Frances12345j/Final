@@ -19,6 +19,7 @@ import dayjs from "dayjs";
 import { api, API_BASE_URL } from "@/config/api";
 import { getCache, setCache, invalidateCache } from "@/utils/cache";
 import { clientPagination, serverPagination } from "@/components/Pagination";
+import { getAuthUser } from "@/utils/authStorage";
 
 function formatRestockedAtUtcClock(value) {
   if (value == null || value === "") return null;
@@ -305,7 +306,7 @@ function ProductList() {
   // Ref to prevent overlapping fetches
   const inFlightRef = useRef(false);
 
-  const currentUser = JSON.parse(localStorage.getItem("user") || "{}");
+  const currentUser = getAuthUser() || {};
   const currentUserName =
     currentUser.name ||
     `${currentUser.firstname || ""} ${currentUser.lastname || ""}`.trim() ||

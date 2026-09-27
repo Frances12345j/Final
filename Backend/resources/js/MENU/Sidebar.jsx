@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Badge, Modal, Tooltip } from "antd";
 import {
@@ -25,6 +25,7 @@ import {
   IdcardOutlined,
 } from "@ant-design/icons";
 import { api } from "../config/api";
+import { getAuthUser, getAuthRole, clearAuthSession } from "../utils/authStorage";
 import logo from "../assets/logooos.jpg";
 
 const NAV_GROUPS = [
@@ -107,8 +108,8 @@ function Sidebar() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifications, setNotifications] = useState([]);
 
-  const user = JSON.parse(localStorage.getItem("user") || "{}");
-  const userRole = localStorage.getItem("role") || "admin";
+  const user = getAuthUser() || {};
+  const userRole = getAuthRole() || "admin";
 
   const toggleCollapsed = () => {
     const next = !collapsed;
@@ -117,10 +118,7 @@ function Sidebar() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("isLoggedIn");
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    localStorage.removeItem("role");
+    clearAuthSession();
     navigate("/login", { replace: true });
     setLogoutModalVisible(false);
   };

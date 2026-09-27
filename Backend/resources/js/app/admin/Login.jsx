@@ -10,6 +10,7 @@ import {
 } from "@ant-design/icons";
 import { api } from "@/config/api";
 import { seedAuthenticatedHistory } from "@/ProtectedRoute";
+import { setAuthSession } from "@/utils/authStorage";
 import logo from "@/assets/logooos.jpg";
 
 const { Title, Text } = Typography;
@@ -32,10 +33,7 @@ function Login() {
 
       const { token, user, role } = response.data;
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("role", role || user?.role || "");
-      localStorage.setItem("isLoggedIn", "true");
+      setAuthSession(token, user, role);
 
       const redirectTo =
         (role || user?.role) === "admin" ? "/dashboard" : "/staff-dashboard";

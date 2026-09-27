@@ -38,13 +38,17 @@ import ProtectedRoute, {
   AuthHistoryGuard,
   GuestRoute,
 } from "./ProtectedRoute.jsx";
+import { getIsLoggedIn, getAuthRole, checkDevRunSession } from "./utils/authStorage.js";
 
-const RootRedirect = () => (
-  <Navigate
-    to={localStorage.getItem("isLoggedIn") === "true" ? "/dashboard" : "/login"}
-    replace
-  />
-);
+const RootRedirect = () => {
+  checkDevRunSession();
+  return (
+    <Navigate
+      to={getIsLoggedIn() ? "/dashboard" : "/login"}
+      replace
+    />
+  );
+};
 
 function AdminApp() {
   return (
@@ -110,7 +114,7 @@ function AdminApp() {
       <Route
         path="/sales"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <SalesRecord />
@@ -125,7 +129,7 @@ function AdminApp() {
       <Route
         path="/customers"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <Customers />
@@ -151,7 +155,7 @@ function AdminApp() {
       <Route
         path="/cash-advance"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <CashAdvance />
@@ -166,7 +170,7 @@ function AdminApp() {
       <Route
         path="/stock-requests"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <StockRequest />
@@ -181,7 +185,7 @@ function AdminApp() {
       <Route
         path="/supply-requests"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <SupplyRequest />
@@ -196,7 +200,7 @@ function AdminApp() {
       <Route
         path="/staff-performance"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <StaffPerformance />
@@ -222,7 +226,7 @@ function AdminApp() {
       <Route
         path="/user-profiles"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <UserProfiles />
@@ -254,7 +258,7 @@ function AdminApp() {
       <Route
         path="/RequestAdmin"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <RequestAdmin />
@@ -269,7 +273,7 @@ function AdminApp() {
       <Route
         path="/pullout-admin"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <PullOutAdmin />
@@ -284,7 +288,7 @@ function AdminApp() {
       <Route
         path="/back-to-sales"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <BackToSale />
@@ -300,7 +304,7 @@ function AdminApp() {
       <Route
         path="/reports"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <ReportGeneration />
@@ -315,7 +319,7 @@ function AdminApp() {
       <Route
         path="/reports/sales"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <SalesReport />
@@ -330,7 +334,7 @@ function AdminApp() {
       <Route
         path="/reports/inventory"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <InventoryReport />
@@ -345,7 +349,7 @@ function AdminApp() {
       <Route
         path="/reports/attendance"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <AttendanceReport />
@@ -360,7 +364,7 @@ function AdminApp() {
       <Route
         path="/reports/branch"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <BranchReport />
@@ -375,7 +379,7 @@ function AdminApp() {
       <Route
         path="/reports/pullout"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <PullOutReport />
@@ -392,7 +396,7 @@ function AdminApp() {
       <Route
         path="/delivery"
         element={
-          localStorage.getItem("role") === "admin" ? (
+          getAuthRole() === "admin" ? (
             <ProtectedRoute>
               <Layout>
                 <Delivery />

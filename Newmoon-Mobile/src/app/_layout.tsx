@@ -13,6 +13,10 @@ export default function RootLayout() {
     useEffect(() => {
         if (!hasReset.current) {
             hasReset.current = true;
+            if (typeof window !== 'undefined' && window.localStorage) {
+                window.localStorage.removeItem('auth_token');
+                window.localStorage.removeItem('user');
+            }
             router.replace('/Login');
         }
     }, []);

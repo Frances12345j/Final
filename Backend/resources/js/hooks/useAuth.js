@@ -8,7 +8,7 @@ export const useAuth = () => {
     // Get user data from localStorage
     const storedUser = localStorage.getItem("user");
     const storedRole = localStorage.getItem("role");
-    
+
     if (storedUser) {
       try {
         setUser(JSON.parse(storedUser));
@@ -16,7 +16,7 @@ export const useAuth = () => {
         setUser(null);
       }
     }
-    
+
     setIsAdmin(storedRole === "admin");
   }, []);
 

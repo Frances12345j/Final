@@ -6,6 +6,9 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 
 export default defineConfig({
+    define: {
+        __DEV_RUN_ID__: JSON.stringify(Date.now()),
+    },
     plugins: [
         laravel({
             input: ['resources/css/app.css', 'resources/js/App.jsx'],

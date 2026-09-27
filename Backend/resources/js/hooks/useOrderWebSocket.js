@@ -7,12 +7,14 @@ const WS_HOST = "192.168.254.101";
 const WS_PORT = 8080;
 const REVERB_KEY = "newmoon-app-key";
 
+import { getAuthToken } from "@/utils/authStorage";
+
 let echo = null;
 
 export const getEcho = () => {
   if (echo) return echo;
 
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
 
   echo = new Echo({
     broadcaster: "pusher",

@@ -1,9 +1,11 @@
 import React, { useEffect, useRef } from "react";
 import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { getIsLoggedIn, checkDevRunSession } from "./utils/authStorage";
 
-// Simple auth check (can be replaced with real auth logic)
+// Simple auth check using session-aware storage
 const isAuthenticated = () => {
-  return localStorage.getItem("isLoggedIn") === "true";
+  checkDevRunSession();
+  return getIsLoggedIn();
 };
 
 const PUBLIC_PATHS = ["/login"];

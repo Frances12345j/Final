@@ -83,7 +83,7 @@ function Dashboard() {
 
   const currentUser = (() => {
     try {
-      return JSON.parse(localStorage.getItem("user") || "{}");
+      return JSON.parse(sessionStorage.getItem("user") || localStorage.getItem("user") || "{}");
     } catch {
       return {};
     }
