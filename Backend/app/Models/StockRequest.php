@@ -9,7 +9,7 @@ class StockRequest extends Model
 {
     use HasFactory;
 
-    protected $table = 'supply_requests';
+    protected $table = 'stock_requests';
 
     protected $fillable = [
         'user_id',

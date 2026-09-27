@@ -114,16 +114,10 @@ const HeroHeader = ({ badgeIcon, badge, title, accent, subtitle, actions, stats 
   </div>
 );
 
-// ─── Palette — matches Inventory Report (warm cream + orange) ─────
-const PANEL_BG = "#FFFFFF";
-const PANEL_BG_2 = "#FFF7ED";
-const BORDER = "rgba(234,88,12,0.10)";
+// ─── Palette ─────────────────────────────────────────────────────
 const TEXT = "#292524";
 const MUTED = "#78716C";
-const FAINT = "#A8A29E";
 const ACCENT = "#EA580C";
-const ACCENT_DEEP = "#F97316";
-const ACCENT_SOFT = "rgba(234,88,12,0.12)";
 const AMBER = "#D97706";
 const AMBER_SOFT = "rgba(245,158,11,0.15)";
 const GREEN = "#16A34A";
@@ -131,7 +125,6 @@ const GREEN_SOFT = "rgba(22,163,74,0.12)";
 const RED = "#DC2626";
 const RED_SOFT = "rgba(220,38,38,0.12)";
 
-// Inline style tokens
 const FIELD_LABEL = { color: "#451A03", fontWeight: 500 };
 const GRADIENT_BTN = {
   background: "linear-gradient(135deg, #EA580C, #F97316)",
@@ -139,18 +132,6 @@ const GRADIENT_BTN = {
   color: "#FFFFFF",
   fontWeight: 600,
   boxShadow: "0 4px 15px rgba(234,88,12,0.35)",
-};
-const SECONDARY_BTN = {
-  background: "#FFFFFF",
-  border: `1px solid ${ACCENT}`,
-  color: ACCENT,
-  fontWeight: 500,
-};
-const GHOST_BTN = {
-  background: "transparent",
-  border: `1px solid ${ACCENT}80`,
-  color: ACCENT,
-  fontWeight: 500,
 };
 const RED_BTN = {
   background: "linear-gradient(135deg, #DC2626, #EF4444)",
@@ -176,14 +157,15 @@ function StockRequest() {
     queryFn: () => api.get("/stock-requests/all"),
   });
 
+  // Laravel paginator body: { current_page, data: [...], per_page, ... }
+  // axios wraps it: response.data = body, so rows live at response.data.data
   const requests = data?.data?.data || [];
 
-  const filtered = statusFilter === "all"
-    ? requests
-    : requests.filter((r) => r.status === statusFilter);
+  const filtered =
+    statusFilter === "all"
+      ? requests
+      : requests.filter((r) => r.status === statusFilter);
 
-  // After approve/reject, await an active refetch so the table updates
-  // immediately without the user clicking the Refresh button.
   const refreshAfterAction = async () => {
     await queryClient.refetchQueries({
       queryKey: ["stockRequestsAll"],
@@ -201,7 +183,8 @@ function StockRequest() {
       setSelected(null);
       await refreshAfterAction();
     },
-    onError: (e) => message.error(e.response?.data?.message || "Failed to approve"),
+    onError: (e) =>
+      message.error(e.response?.data?.message || "Failed to approve"),
   });
 
   const rejectMutation = useMutation({
@@ -214,7 +197,8 @@ function StockRequest() {
       setSelected(null);
       await refreshAfterAction();
     },
-    onError: (e) => message.error(e.response?.data?.message || "Failed to reject"),
+    onError: (e) =>
+      message.error(e.response?.data?.message || "Failed to reject"),
   });
 
   const handleApprove = (values) => {
@@ -229,13 +213,27 @@ function StockRequest() {
     const m = {
       pending: { soft: AMBER_SOFT, color: AMBER, icon: <ClockCircleOutlined />, text: "Pending" },
       approved: { soft: GREEN_SOFT, color: GREEN, icon: <CheckCircleOutlined />, text: "Approved" },
-      rejected: { soft: RED_SOFT, color: "#DC2626", icon: <CloseCircleOutlined />, text: "Rejected" },
+      rejected: { soft: RED_SOFT, color: RED, icon: <CloseCircleOutlined />, text: "Rejected" },
     };
     const c = m[status] || m.pending;
-    return <Tag className="rounded-full px-3 py-1" icon={c.icon} style={{ background: c.soft, color: c.color, border: "none", fontWeight: 600 }}>{c.text}</Tag>;
+    return (
+      <Tag
+        className="rounded-full px-3 py-1"
+        icon={c.icon}
+        style={{ background: c.soft, color: c.color, border: "none", fontWeight: 600 }}
+      >
+        {c.text}
+      </Tag>
+    );
   };
 
-  const fmtDate = (d) => d ? new Date(d).toLocaleDateString("en-PH", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "-";
+  const fmtDate = (d) =>
+    d
+      ? new Date(d).toLocaleDateString("en-PH", {
+        year: "numeric", month: "short", day: "numeric",
+        hour: "2-digit", minute: "2-digit",
+      })
+      : "-";
 
   const columns = [
     {
@@ -256,7 +254,9 @@ function StockRequest() {
       key: "staff",
       render: (_, r) => (
         <div>
-          <div className="font-semibold" style={{ color: TEXT }}>{r.user?.firstname} {r.user?.lastname}</div>
+          <div className="font-semibold" style={{ color: TEXT }}>
+            {r.user?.firstname} {r.user?.lastname}
+          </div>
           <div className="text-xs" style={{ color: MUTED }}>ID: {r.user?.id}</div>
         </div>
       ),
@@ -285,15 +285,21 @@ function StockRequest() {
       title: "Reason",
       dataIndex: "reason",
       key: "reason",
-      render: (v) => v
-        ? <span className="line-clamp-2 text-sm" style={{ color: TEXT }}>{v}</span>
-        : <span style={{ color: MUTED }}>-</span>,
+      render: (v) =>
+        v ? (
+          <span className="line-clamp-2 text-sm" style={{ color: TEXT }}>{v}</span>
+        ) : (
+          <span style={{ color: MUTED }}>-</span>
+        ),
     },
     {
       title: "Requested",
-      dataIndex: "requested_at",
-      key: "requested_at",
-      render: (v) => <span className="text-sm" style={{ color: MUTED }}>{fmtDate(v)}</span>,
+      key: "requested",
+      render: (_, r) => (
+        <span className="text-sm" style={{ color: MUTED }}>
+          {fmtDate(r.requested_at || r.created_at)}
+        </span>
+      ),
     },
     {
       title: "Status",
@@ -305,9 +311,12 @@ function StockRequest() {
       title: "Admin Notes",
       dataIndex: "admin_notes",
       key: "admin_notes",
-      render: (v) => v
-        ? <span className="line-clamp-2 text-sm" style={{ color: TEXT }}>{v}</span>
-        : <span style={{ color: MUTED }}>-</span>,
+      render: (v) =>
+        v ? (
+          <span className="line-clamp-2 text-sm" style={{ color: TEXT }}>{v}</span>
+        ) : (
+          <span style={{ color: MUTED }}>-</span>
+        ),
     },
     {
       title: "Actions",
@@ -315,25 +324,32 @@ function StockRequest() {
       fixed: "right",
       render: (_, r) => (
         <Space size="small">
-          {r.status === "pending" && (
+          {r.status === "pending" ? (
             <>
               <Tooltip title="Approve">
-                <Button size="small" icon={<CheckOutlined />}
+                <Button
+                  size="small"
+                  icon={<CheckOutlined />}
                   onClick={() => { setSelected(r); setShowApproveModal(true); }}
-                  style={GRADIENT_BTN}>
+                  style={GRADIENT_BTN}
+                >
                   Approve
                 </Button>
               </Tooltip>
               <Tooltip title="Reject">
-                <Button size="small" icon={<CloseOutlined />}
+                <Button
+                  size="small"
+                  icon={<CloseOutlined />}
                   onClick={() => { setSelected(r); setShowRejectModal(true); }}
-                  style={RED_BTN}>
+                  style={RED_BTN}
+                >
                   Reject
                 </Button>
               </Tooltip>
             </>
+          ) : (
+            <span className="text-sm" style={{ color: MUTED }}>No actions</span>
           )}
-          {r.status !== "pending" && <span className="text-sm" style={{ color: MUTED }}>No actions</span>}
         </Space>
       ),
     },
@@ -344,7 +360,9 @@ function StockRequest() {
     pending: requests.filter((r) => r.status === "pending").length,
     approved: requests.filter((r) => r.status === "approved").length,
     rejected: requests.filter((r) => r.status === "rejected").length,
-    totalQty: requests.filter((r) => r.status === "approved").reduce((s, r) => s + Number(r.quantity), 0),
+    totalQty: requests
+      .filter((r) => r.status === "approved")
+      .reduce((s, r) => s + Number(r.quantity || 0), 0),
   };
 
   return (
@@ -417,9 +435,9 @@ function StockRequest() {
       <Modal
         title={
           <div className="flex items-center gap-2">
-            <div
-              className="flex h-11 w-11 items-center justify-center rounded-xl text-lg bg-[#FFF1E6] text-[#EA580C]"
-            ><CheckOutlined /></div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl text-lg bg-[#FFF1E6] text-[#EA580C]">
+              <CheckOutlined />
+            </div>
             <div>
               <p className="font-bold text-[#451A03]">Approve Stock Request</p>
               <p className="text-xs font-normal text-stone-500">Approve this staff stock request</p>
@@ -429,16 +447,20 @@ function StockRequest() {
         open={showApproveModal}
         onCancel={() => { setShowApproveModal(false); approveForm.resetFields(); setSelected(null); }}
         footer={null}
-        destroyOnHidden
+        destroyOnClose
         className="rounded-2xl"
       >
         {selected && (
           <div className="mb-4 rounded-xl border border-orange-100 bg-[#FFF1E6] p-4">
-            <div className="font-semibold text-stone-800">{selected.user?.firstname} {selected.user?.lastname}</div>
+            <div className="font-semibold text-stone-800">
+              {selected.user?.firstname} {selected.user?.lastname}
+            </div>
             <div className="font-bold text-[#EA580C]">{selected.product?.name}</div>
             <div className="text-sm text-stone-500">Quantity: {selected.quantity}</div>
             <div className="text-sm text-stone-500">Branch: {selected.branch?.name}</div>
-            {selected.reason && <div className="mt-1 text-sm text-stone-500">Reason: {selected.reason}</div>}
+            {selected.reason && (
+              <div className="mt-1 text-sm text-stone-500">Reason: {selected.reason}</div>
+            )}
           </div>
         )}
         <Form form={approveForm} layout="vertical" onFinish={handleApprove} initialValues={{ admin_notes: "" }}>
@@ -489,9 +511,9 @@ function StockRequest() {
       <Modal
         title={
           <div className="flex items-center gap-2">
-            <div
-              className="flex h-11 w-11 items-center justify-center rounded-xl text-lg bg-[#FEF2F2] text-[#DC2626]"
-            ><CloseOutlined /></div>
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl text-lg bg-[#FEF2F2] text-[#DC2626]">
+              <CloseOutlined />
+            </div>
             <div>
               <p className="font-bold text-[#451A03]">Reject Stock Request</p>
               <p className="text-xs font-normal text-stone-500">Reject this staff stock request</p>
@@ -501,16 +523,20 @@ function StockRequest() {
         open={showRejectModal}
         onCancel={() => { setShowRejectModal(false); rejectForm.resetFields(); setSelected(null); }}
         footer={null}
-        destroyOnHidden
+        destroyOnClose
         className="rounded-2xl"
       >
         {selected && (
           <div className="mb-4 rounded-xl border border-red-100 bg-[#FEF2F2] p-4">
-            <div className="font-semibold text-stone-800">{selected.user?.firstname} {selected.user?.lastname}</div>
+            <div className="font-semibold text-stone-800">
+              {selected.user?.firstname} {selected.user?.lastname}
+            </div>
             <div className="font-bold text-[#DC2626]">{selected.product?.name}</div>
             <div className="text-sm text-stone-500">Quantity: {selected.quantity}</div>
             <div className="text-sm text-stone-500">Branch: {selected.branch?.name}</div>
-            {selected.reason && <div className="mt-1 text-sm text-stone-500">Reason: {selected.reason}</div>}
+            {selected.reason && (
+              <div className="mt-1 text-sm text-stone-500">Reason: {selected.reason}</div>
+            )}
           </div>
         )}
         <Form form={rejectForm} layout="vertical" onFinish={handleReject} initialValues={{ admin_notes: "" }}>

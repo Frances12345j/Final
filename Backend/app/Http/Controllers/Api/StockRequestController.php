@@ -8,23 +8,53 @@ use App\Models\StockRequest;
 use App\Models\ProductStockDelivery;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class StockRequestController extends Controller
 {
+    /**
+     * Column used for ordering. Falls back to created_at if requested_at
+     * doesn't exist on the table (prevents SQLSTATE 42S22 → 500).
+     */
+    private function orderColumn(): string
+    {
+        return Schema::hasColumn('stock_requests', 'requested_at')
+            ? 'requested_at'
+            : 'created_at';
+    }
+
+    /**
+     * Relationships that actually exist on the model.
+     * Filters out approver/rejecter if the model doesn't define them,
+     * so a missing relation never causes a 500.
+     */
+    private function safeWith(): array
+    {
+        $model = new StockRequest();
+        $wanted = ['user', 'product', 'branch', 'approver', 'rejecter'];
+        $available = [];
+
+        foreach ($wanted as $rel) {
+            if (method_exists($model, $rel)) {
+                $available[] = $rel;
+            }
+        }
+
+        return $available;
+    }
+
     /**
      * Get stock requests for the authenticated user
      */
     public function myStockRequests(Request $request)
     {
         $user = $request->user();
-        
-        // Simple Laravel pagination - auto-calculates pages
-        $requests = StockRequest::where('user_id', $user->id)
-            ->with(['user', 'product', 'branch', 'approver', 'rejecter'])
-            ->orderBy('requested_at', 'desc')
-            ->paginate(5); // 5 items per page
 
-        // Return as JSON with full pagination metadata
+        $requests = StockRequest::where('user_id', $user->id)
+            ->with($this->safeWith())
+            ->orderBy($this->orderColumn(), 'desc')
+            ->paginate(5);
+
         return response()->json($requests);
     }
 
@@ -32,25 +62,30 @@ class StockRequestController extends Controller
      * Get all stock requests (for admin)
      */
     public function allStockRequests(Request $request)
-    {
-        $query = StockRequest::with(['user', 'product', 'branch', 'approver', 'rejecter'])
-            ->orderBy('requested_at', 'desc');
+{
+    try {
+        $query = StockRequest::with($this->safeWith())
+            ->orderBy($this->orderColumn(), 'desc');
 
-        // Apply filters if provided
-        if ($request->has('status')) {
+        if ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        if ($request->has('branch_id')) {
+        if ($request->filled('branch_id')) {
             $query->where('branch_id', $request->branch_id);
         }
 
-        // Simple pagination with 5 items per page
         $requests = $query->paginate(5);
 
-        // Return as JSON with full pagination metadata
         return response()->json($requests);
+    } catch (\Throwable $e) {
+        \Log::error('StockRequest allStockRequests failed', ['error' => $e->getMessage()]);
+        return response()->json([
+            'message' => 'Failed to fetch stock requests',
+            'error'   => $e->getMessage(),
+        ], 500);
     }
+}
 
     /**
      * Store a new stock request
@@ -59,14 +94,13 @@ class StockRequestController extends Controller
     {
         $validated = $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1',
-            'reason' => 'nullable|string|max:500',
+            'quantity'   => 'required|integer|min:1',
+            'reason'     => 'nullable|string|max:500',
         ]);
 
         try {
             $user = $request->user();
-            
-            // Get the user's active staff assignment branch
+
             $staffAssignment = \App\Models\StaffAssignment::where('user_id', $user->id)
                 ->where('is_active', true)
                 ->first();
@@ -75,40 +109,49 @@ class StockRequestController extends Controller
                 return response()->json(['message' => 'No active branch assignment found for user'], 400);
             }
 
-            $stockRequest = StockRequest::create([
-                'user_id' => $user->id,
+            $payload = [
+                'user_id'    => $user->id,
                 'product_id' => $validated['product_id'],
-                'branch_id' => $staffAssignment->branch_id,
-                'quantity' => $validated['quantity'],
-                'reason' => $validated['reason'] ?? null,
-                'status' => 'pending',
-                'requested_at' => now(),
-            ]);
+                'branch_id'  => $staffAssignment->branch_id,
+                'quantity'   => $validated['quantity'],
+                'reason'     => $validated['reason'] ?? null,
+                'status'     => 'pending',
+            ];
 
-            $stockRequest->load(['user', 'product', 'branch']);
-            $staffName = $stockRequest->user?->full_name ?? "Staff #{$stockRequest->user_id}";
+            if (Schema::hasColumn('stock_requests', 'requested_at')) {
+                $payload['requested_at'] = now();
+            }
+
+            $stockRequest = StockRequest::create($payload);
+            $stockRequest->load($this->safeWith());
+
+            $staffName   = $stockRequest->user?->full_name ?? "Staff #{$stockRequest->user_id}";
             $productName = $stockRequest->product?->name ?? "Product #{$stockRequest->product_id}";
-            $branchName = $stockRequest->branch?->name ?? 'Undefined Branch';
+            $branchName  = $stockRequest->branch?->name ?? 'Undefined Branch';
 
             Notification::create([
-                'type' => 'stock_request',
+                'type'    => 'stock_request',
                 'message' => "{$staffName} requested {$stockRequest->quantity} stock of {$productName} for {$branchName}",
-                'data' => [
+                'data'    => [
                     'stock_request_id' => $stockRequest->id,
-                    'user_id' => $stockRequest->user_id,
-                    'user_name' => $staffName,
-                    'product_id' => $stockRequest->product_id,
-                    'product_name' => $productName,
-                    'branch_id' => $stockRequest->branch_id,
-                    'branch_name' => $branchName,
-                    'quantity' => $stockRequest->quantity,
-                    'status' => 'pending',
+                    'user_id'          => $stockRequest->user_id,
+                    'user_name'        => $staffName,
+                    'product_id'       => $stockRequest->product_id,
+                    'product_name'     => $productName,
+                    'branch_id'        => $stockRequest->branch_id,
+                    'branch_name'      => $branchName,
+                    'quantity'         => $stockRequest->quantity,
+                    'status'           => 'pending',
                 ],
             ]);
 
-            return response()->json($stockRequest->load(['user', 'product', 'branch']), 201);
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to create stock request', 'error' => $e->getMessage()], 500);
+            return response()->json($stockRequest->load($this->safeWith()), 201);
+        } catch (\Throwable $e) {
+            \Log::error('StockRequest store failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Failed to create stock request',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -118,11 +161,9 @@ class StockRequestController extends Controller
     public function show($id)
     {
         try {
-            $request = StockRequest::with(['user', 'product', 'branch', 'approver', 'rejecter'])
-                ->findOrFail($id);
-
+            $request = StockRequest::with($this->safeWith())->findOrFail($id);
             return response()->json($request);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             return response()->json(['message' => 'Stock request not found'], 404);
         }
     }
@@ -142,30 +183,33 @@ class StockRequestController extends Controller
             }
 
             DB::beginTransaction();
-            
+
             $stockRequest->update([
-                'status' => 'approved',
-                'approved_at' => now(),
-                'approved_by' => $admin->id,
-                'admin_notes' => $request->admin_notes ?? null,
+                'status'       => 'approved',
+                'approved_at'  => now(),
+                'approved_by'  => $admin->id,
+                'admin_notes'  => $request->admin_notes ?? null,
             ]);
 
-            // Create a pending delivery for the approved stock request
-            $delivery = ProductStockDelivery::create([
-                'product_id' => $stockRequest->product_id,
-                'branch_id' => $stockRequest->branch_id,
-                'quantity' => $stockRequest->quantity,
+            ProductStockDelivery::create([
+                'product_id'   => $stockRequest->product_id,
+                'branch_id'    => $stockRequest->branch_id,
+                'quantity'     => $stockRequest->quantity,
                 'restocked_at' => \Carbon\Carbon::now('Asia/Manila'),
-                'received_at' => null,
-                'received_by' => null,
+                'received_at'  => null,
+                'received_by'  => null,
             ]);
 
             DB::commit();
 
-            return response()->json($stockRequest->load(['user', 'product', 'branch', 'approver', 'rejecter']));
-        } catch (\Exception $e) {
+            return response()->json($stockRequest->load($this->safeWith()));
+        } catch (\Throwable $e) {
             DB::rollBack();
-            return response()->json(['message' => 'Failed to approve stock request', 'error' => $e->getMessage()], 500);
+            \Log::error('StockRequest approve failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Failed to approve stock request',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -184,15 +228,19 @@ class StockRequestController extends Controller
             }
 
             $stockRequest->update([
-                'status' => 'rejected',
+                'status'      => 'rejected',
                 'rejected_at' => now(),
                 'rejected_by' => $admin->id,
                 'admin_notes' => $request->admin_notes ?? null,
             ]);
 
-            return response()->json($stockRequest->load(['user', 'product', 'branch', 'approver', 'rejecter']));
-        } catch (\Exception $e) {
-            return response()->json(['message' => 'Failed to reject stock request', 'error' => $e->getMessage()], 500);
+            return response()->json($stockRequest->load($this->safeWith()));
+        } catch (\Throwable $e) {
+            \Log::error('StockRequest reject failed', ['error' => $e->getMessage()]);
+            return response()->json([
+                'message' => 'Failed to reject stock request',
+                'error'   => $e->getMessage(),
+            ], 500);
         }
     }
 
@@ -202,8 +250,7 @@ class StockRequestController extends Controller
     public function getUserBranches(Request $request)
     {
         $user = $request->user();
-        
-        // Get branches where the user has an active staff assignment
+
         $assignedBranchIds = \App\Models\StaffAssignment::where('user_id', $user->id)
             ->where('is_active', true)
             ->pluck('branch_id');
@@ -223,10 +270,10 @@ class StockRequestController extends Controller
         $user = $request->user();
 
         $stats = [
-            'total_requested' => StockRequest::where('user_id', $user->id)->count(),
-            'pending' => StockRequest::where('user_id', $user->id)->where('status', 'pending')->count(),
-            'approved' => StockRequest::where('user_id', $user->id)->where('status', 'approved')->count(),
-            'rejected' => StockRequest::where('user_id', $user->id)->where('status', 'rejected')->count(),
+            'total_requested'        => StockRequest::where('user_id', $user->id)->count(),
+            'pending'                => StockRequest::where('user_id', $user->id)->where('status', 'pending')->count(),
+            'approved'               => StockRequest::where('user_id', $user->id)->where('status', 'approved')->count(),
+            'rejected'               => StockRequest::where('user_id', $user->id)->where('status', 'rejected')->count(),
             'total_quantity_approved' => StockRequest::where('user_id', $user->id)
                 ->where('status', 'approved')
                 ->sum('quantity'),
