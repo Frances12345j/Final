@@ -3,9 +3,19 @@ import Pusher from "pusher-js";
 
 window.Pusher = Pusher;
 
-const WS_HOST = "192.168.254.101";
-const WS_PORT = 8080;
-const REVERB_KEY = "newmoon-app-key";
+const WS_HOST = import.meta.env.VITE_WS_HOST || "localhost";
+
+// Production is served over https, and browsers block insecure ws:// as mixed
+// content, so TLS is enabled whenever the page itself is secure.
+const FORCE_TLS =
+  import.meta.env.VITE_WS_FORCE_TLS === "true" ||
+  (typeof window !== "undefined" && window.location.protocol === "https:");
+
+const WS_PORT = FORCE_TLS ? 443 : Number(import.meta.env.VITE_WS_PORT || 8080);
+const REVERB_KEY = import.meta.env.VITE_REVERB_KEY || "newmoon-app-key";
+const API_ORIGIN =
+  import.meta.env.VITE_API_ORIGIN ||
+  (import.meta.env.VITE_API_BASE_URL || "/api").replace(/\/api\/?$/, "");
 
 import { getAuthToken } from "@/utils/authStorage";
 
@@ -22,11 +32,11 @@ export const getEcho = () => {
     wsHost: WS_HOST,
     wsPort: WS_PORT,
     wssPort: WS_PORT,
-    forceTLS: false,
-    encrypted: false,
+      forceTLS: FORCE_TLS,
+      encrypted: FORCE_TLS,
     disableStats: true,
     enabledTransports: ["ws", "wss"],
-    authEndpoint: "http://192.168.254.101:8000/broadcasting/auth",
+    authEndpoint: `${API_ORIGIN}/broadcasting/auth`,
     auth: {
       headers: {
         Authorization: `Bearer ${token}`,

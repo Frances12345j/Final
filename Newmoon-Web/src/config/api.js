@@ -1,7 +1,7 @@
 import axios from "axios";
 import { getAuthToken, clearAuthSession } from "@/utils/authStorage";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://192.168.254.105:8000/api";
 
 export const api = axios.create({
   baseURL: API_BASE_URL,

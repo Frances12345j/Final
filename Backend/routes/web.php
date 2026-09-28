@@ -2,7 +2,5 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/{any?}', function () {
-    return view('app');
-})->where('any', '^(?!api).*$');
-
+// The admin SPA lives in Newmoon-Web and is served separately.
+// This backend is API-only; no catch-all web routes are registered.

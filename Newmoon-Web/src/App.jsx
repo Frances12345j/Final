@@ -7,6 +7,7 @@ import { spinConfig } from "./components/spinConfig.jsx";
 import AdminApp from "./AdminApp";
 import { LowStockProvider } from "./context/LowStockContext.jsx";
 import "antd/dist/reset.css";
+import "./index.css";
 
 export const queryClient = new QueryClient({
   defaultOptions: {

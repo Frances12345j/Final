@@ -7,11 +7,25 @@ return [
     | Cross-Origin Resource Sharing (CORS) Configuration
     |--------------------------------------------------------------------------
     |
-    | Here you may configure your settings for cross-origin resource sharing
-    | or "CORS". This determines what cross-origin operations may execute
-    | in web browsers. You are free to adjust these settings as needed.
+    | The NewMoon system serves two clients:
     |
-    | To learn more: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+    |  1. React/Vite web app  — same domain as Laravel (no CORS needed for
+    |     same-origin requests, but the SPA may call /api/* cross-origin in
+    |     development, so we still apply the policy below).
+    |
+    |  2. Expo mobile app     — HTTP requests originate from a native device,
+    |     not a browser. Expo does NOT send an Origin header for most requests,
+    |     so CORS browser restrictions do not apply in the same way. We still
+    |     allow '*' here so that any web-based Expo Go traffic or Expo web
+    |     preview works without extra configuration.
+    |
+    | Authentication uses Sanctum Bearer tokens (stateless), NOT cookies.
+    | Because no session cookies are involved, CSRF does not apply to the API.
+    | 'supports_credentials' is therefore false (cookies are never sent).
+    |
+    | If you add cookie-based (SPA) auth in the future, narrow
+    | 'allowed_origins' to your exact production domain(s) and set
+    | 'supports_credentials' => true.
     |
     */
 
@@ -19,6 +33,10 @@ return [
 
     'allowed_methods' => ['*'],
 
+    // '*' is safe here because:
+    //  - All protected endpoints require a Bearer token.
+    //  - No session cookies are used by the API.
+    //  - The Expo mobile app may not send Origin headers at all.
     'allowed_origins' => ['*'],
 
     'allowed_origins_patterns' => [],
