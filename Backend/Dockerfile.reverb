@@ -1,10 +1,10 @@
 # syntax=docker/dockerfile:1
 # ----------------------------------------------------
-# NewMoon API — Laravel 13 on PHP 8.3 + Apache
+# NewMoon WebSockets — Laravel Reverb server
 # ----------------------------------------------------
-# This image is API-only. The React admin SPA lives in
-# /Newmoon-Web and is published as a separate static site,
-# so there is no Node build stage here.
+# Runs the Reverb websocket server as a long-lived foreground
+# process. Shares the Backend codebase so that broadcasting
+# config and channel authorization match the API service.
 # ----------------------------------------------------
 
 # ----------------------------------------------------
@@ -24,9 +24,9 @@ RUN composer install \
     --optimize-autoloader
 
 # ----------------------------------------------------
-# Stage 2: Production PHP 8.3 + Apache
+# Stage 2: Production PHP 8.3 CLI
 # ----------------------------------------------------
-FROM php:8.3-apache
+FROM php:8.3-cli
 
 WORKDIR /var/www/html
 
@@ -53,29 +53,25 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zip \
     intl \
     opcache \
-    && a2enmod rewrite headers \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Virtual host: DocumentRoot is public/, plus the Sanctum bearer-token headers.
-COPY apache.conf /etc/apache2/sites-available/000-default.conf
+# Container init wrapper: prepares writable dirs, seeds a .env if the
+# platform injects env vars directly, then hands off to Reverb.
+COPY docker-entrypoint-reverb.sh /usr/local/bin/docker-entrypoint-reverb.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint-reverb.sh
 
-# Entrypoint and Apache configuration are read-only at runtime.
-COPY docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
-
-# Application source (vendor/ and .dockerignore'd paths are excluded by the
-# .dockerignore in this directory, so they are restored from the stage below).
 COPY . /var/www/html
 
-# Restore Composer dependencies built in stage 1.
 COPY --from=vendor /app/vendor /var/www/html/vendor
 
-# Laravel writes compiled packages during boot; keep it off the build layer.
 RUN php artisan package:discover --ansi || true \
     && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-EXPOSE 80
+# Render injects PORT; Reverb must bind 0.0.0.0 on that port.
+ENV REVERB_SERVER_HOST=0.0.0.0
 
-ENTRYPOINT ["docker-entrypoint.sh"]
+EXPOSE 8080
+
+ENTRYPOINT ["docker-entrypoint-reverb.sh"]

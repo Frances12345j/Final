@@ -1,11 +1,31 @@
+# Render blueprint for NewMoon.
+#
+# Three services:
+#   newmoon-api     Laravel 13 REST API      (Docker, PHP 8.3 + Apache)
+#   newmoon-reverb  Laravel Reverb websockets (Docker, PHP 8.3 CLI)
+#   newmoon-web     React 19 + Vite admin SPA (static site)
+#
+# The SPA moved out of Backend/resources/js into Newmoon-Web, so the API image
+# no longer contains a Node build stage and the two frontends are deployed
+# separately from the backend.
+#
+# Service names are load-bearing: the public URLs below are derived from them
+# and injected at build time. Renaming a service means updating every
+# reference to it in this file.
+
 services:
+  # ------------------------------------------------------------------
+  # Laravel REST API
+  # ------------------------------------------------------------------
   - type: web
-    name: newmoon-app
+    name: newmoon-api
     runtime: docker
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
+    dockerfilePath: ./Backend/Dockerfile
+    dockerContext: ./Backend
     plan: free
     region: singapore
+    healthCheckPath: /api/health
+    autoDeploy: true
     envVars:
       - key: APP_NAME
         value: NewMoon
@@ -16,12 +36,13 @@ services:
       - key: APP_KEY
         generateValue: true
       - key: APP_URL
-        fromService:
-          type: web
-          name: newmoon-app
-          property: host
+        value: https://newmoon-api.onrender.com
       - key: LOG_CHANNEL
         value: stderr
+      - key: LOG_LEVEL
+        value: info
+
+      # Aiven free-tier MySQL. Set these in the Render dashboard.
       - key: DB_CONNECTION
         value: mysql
       - key: DB_HOST
@@ -34,27 +55,174 @@ services:
         sync: false
       - key: DB_PASSWORD
         sync: false
+
+      # Stateless Sanctum bearer auth: no cookies, so file sessions are fine.
+      - key: SESSION_DRIVER
+        value: file
+      # Database-backed cache so rate limiting survives deploys.
+      - key: CACHE_STORE
+        value: database
+      - key: QUEUE_CONNECTION
+        value: database
       - key: RUN_MIGRATIONS
         value: "true"
-      - key: SESSION_DRIVER
-        value: database
+
+      # Point the broadcaster at the public Reverb service.
+      - key: BROADCAST_CONNECTION
+        value: reverb
+      - key: REVERB_HOST
+        value: newmoon-reverb.onrender.com
+      - key: REVERB_PORT
+        value: "443"
+      - key: REVERB_SCHEME
+        value: https
+      - key: REVERB_APP_ID
+        value: newmoon-app
+      - key: REVERB_APP_KEY
+        value: newmoon-app-key
+      # Must match REVERB_APP_SECRET on newmoon-reverb. Set in the dashboard.
+      - key: REVERB_APP_SECRET
+        generateValue: true
+
+      # PayMongo GCash credentials (routes/api.php). Set in the dashboard.
+      - key: PAYMONGO_SECRET_KEY
+        sync: false
+      - key: PAYMONGO_PUBLIC_KEY
+        sync: false
+
+      # Mail. Set in the dashboard; never commit real SMTP credentials.
+      - key: MAIL_MAILER
+        value: smtp
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
+      - key: MAIL_ENCRYPTION
+        value: tls
+      - key: MAIL_FROM_ADDRESS
+        sync: false
+      - key: MAIL_FROM_NAME
+        value: NewMoon Lechon Manok & Liempo House
+
+  # ------------------------------------------------------------------
+  # Laravel Reverb websocket server
+  # ------------------------------------------------------------------
+  - type: web
+    name: newmoon-reverb
+    runtime: docker
+    dockerfilePath: ./Backend/Dockerfile.reverb
+    dockerContext: ./Backend
+    plan: free
+    region: singapore
+    # Reverb's built-in health endpoint. (/app is not a valid path here.)
+    healthCheckPath: /up
+    autoDeploy: true
+    envVars:
+      - key: APP_NAME
+        value: NewMoon
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        fromService:
+          type: web
+          name: newmoon-api
+          envVarKey: APP_KEY
+
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromService:
+          type: web
+          name: newmoon-api
+          envVarKey: DB_HOST
+      - key: DB_PORT
+        fromService:
+          type: web
+          name: newmoon-api
+          envVarKey: DB_PORT
+      - key: DB_DATABASE
+        fromService:
+          type: web
+          name: newmoon-api
+          envVarKey: DB_DATABASE
+      - key: DB_USERNAME
+        fromService:
+          type: web
+          name: newmoon-api
+          envVarKey: DB_USERNAME
+      - key: DB_PASSWORD
+        fromService:
+          type: web
+          name: newmoon-api
+          envVarKey: DB_PASSWORD
+
       - key: CACHE_STORE
         value: database
       - key: QUEUE_CONNECTION
         value: database
 
+      # Reverb binds 0.0.0.0 on Render's assigned PORT; the entrypoint
+      # passes that port to `reverb:start`.
+      - key: REVERB_SERVER_HOST
+        value: 0.0.0.0
+      - key: REVERB_SERVER_PORT
+        value: "8080"
+      - key: REVERB_HOST
+        value: newmoon-reverb.onrender.com
+      - key: REVERB_PORT
+        value: "443"
+      - key: REVERB_SCHEME
+        value: https
+      - key: REVERB_APP_ID
+        value: newmoon-app
+      - key: REVERB_APP_KEY
+        value: newmoon-app-key
+      # Must match REVERB_APP_SECRET on newmoon-api.
+      - key: REVERB_APP_SECRET
+        fromService:
+          type: web
+          name: newmoon-api
+          envVarKey: REVERB_APP_SECRET
+
+  # ------------------------------------------------------------------
+  # React admin SPA
+  # ------------------------------------------------------------------
   - type: web
-    name: newmoon-mobile
-    runtime: node
-    plan: free
-    rootDir: Newmoon-Mobile
-    buildCommand: npm install && npx expo export -p web
+    name: newmoon-web
+    runtime: static
+    rootDir: Newmoon-Web
+    buildCommand: npm ci && npm run build
     staticPublishPath: dist
+    region: singapore
+    autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: "22.20.0"
-      - key: EXPO_PUBLIC_BACKEND_URL
-        fromService:
-          type: web
-          name: newmoon-app
-          property: host
+
+      # Vite inlines these at build time, so they must be full origins with
+      # a scheme. This is why they are literals rather than `fromService`
+      # (Render's `property: host` returns a bare hostname, no scheme).
+      - key: VITE_API_BASE_URL
+        value: https://newmoon-api.onrender.com/api
+      - key: VITE_API_ORIGIN
+        value: https://newmoon-api.onrender.com
+      - key: VITE_WS_HOST
+        value: newmoon-reverb.onrender.com
+      - key: VITE_WS_PORT
+        value: "443"
+      - key: VITE_WS_FORCE_TLS
+        value: "true"
+      - key: VITE_REVERB_KEY
+        value: newmoon-app-key
+    routes:
+      # React Router deep links (/orders/12) must fall back to index.html,
+      # otherwise a browser refresh on any non-root route returns 404.
+      - type: rewrite
+        source: /*
+        destination: /index.html

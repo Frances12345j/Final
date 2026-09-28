@@ -2,6 +2,7 @@
 
 
 use App\Models\StockRequest;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\PulloutController;
 use App\Http\Controllers\Api\AuthController;
@@ -31,6 +32,24 @@ use App\Http\Controllers\Api\UserController;
 use App\Http\Controllers\Api\ExpenseController;
 
 // PUBLIC ROUTES
+
+// Unauthenticated liveness probe used by the deploy platform's health check.
+// It touches the database so a failing connection surfaces here rather than
+// as a confusing 500 on the first real request.
+Route::get('/health', function () {
+    try {
+        DB::connection()->getPdo();
+        $database = 'ok';
+    } catch (Throwable $e) {
+        $database = 'unavailable';
+    }
+
+    return response()->json([
+        'status' => $database === 'ok' ? 'ok' : 'degraded',
+        'database' => $database,
+    ], $database === 'ok' ? 200 : 503);
+});
+
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/admin/login', [LoginController::class, 'login']);
 Route::post('/register', [RegisterController::class, 'register']);
