@@ -42,3 +42,14 @@ services:
         value: database
       - key: QUEUE_CONNECTION
         value: database
+
+  - type: web
+    name: newmoon-mobile
+    runtime: node
+    plan: free
+    rootDir: Newmoon-Mobile
+    buildCommand: npm install && npx expo export -p web
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: "22.20.0"
