@@ -1,6 +1,7 @@
 # Render blueprint for NewMoon.
 #
-# Three services:
+# Services:
+#   newmoon-db      PostgreSQL 16            (Render managed database)
 #   newmoon-api     Laravel 13 REST API      (Docker, PHP 8.3 + Apache)
 #   newmoon-reverb  Laravel Reverb websockets (Docker, PHP 8.3 CLI)
 #   newmoon-web     React 19 + Vite admin SPA (static site)
@@ -9,11 +10,24 @@
 # no longer contains a Node build stage and the two frontends are deployed
 # separately from the backend.
 #
+# Production runs PostgreSQL while local development still uses MySQL, so the
+# report queries pick their date-formatting function from the active driver.
+#
 # Service names are load-bearing: the public URLs below are derived from them
 # and injected at build time. Renaming a service means updating every
 # reference to it in this file.
 
 services:
+  # ------------------------------------------------------------------
+  # PostgreSQL
+  # ------------------------------------------------------------------
+  - type: db
+    name: newmoon-db
+    plan: free
+    region: singapore
+    postgresMajorVersion: "16"
+    ipAllowList: []
+
   # ------------------------------------------------------------------
   # Laravel REST API
   # ------------------------------------------------------------------
@@ -42,19 +56,14 @@ services:
       - key: LOG_LEVEL
         value: info
 
-      # Aiven free-tier MySQL. Set these in the Render dashboard.
+      # DB_URL takes precedence over the individual DB_* values in
+      # config/database.php, so a single connection string is enough.
       - key: DB_CONNECTION
-        value: mysql
-      - key: DB_HOST
-        sync: false
-      - key: DB_PORT
-        value: "3306"
-      - key: DB_DATABASE
-        sync: false
-      - key: DB_USERNAME
-        sync: false
-      - key: DB_PASSWORD
-        sync: false
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: newmoon-db
+          property: connectionString
 
       # Stateless Sanctum bearer auth: no cookies, so file sessions are fine.
       - key: SESSION_DRIVER
@@ -135,32 +144,11 @@ services:
           envVarKey: APP_KEY
 
       - key: DB_CONNECTION
-        value: mysql
-      - key: DB_HOST
-        fromService:
-          type: web
-          name: newmoon-api
-          envVarKey: DB_HOST
-      - key: DB_PORT
-        fromService:
-          type: web
-          name: newmoon-api
-          envVarKey: DB_PORT
-      - key: DB_DATABASE
-        fromService:
-          type: web
-          name: newmoon-api
-          envVarKey: DB_DATABASE
-      - key: DB_USERNAME
-        fromService:
-          type: web
-          name: newmoon-api
-          envVarKey: DB_USERNAME
-      - key: DB_PASSWORD
-        fromService:
-          type: web
-          name: newmoon-api
-          envVarKey: DB_PASSWORD
+        value: pgsql
+      - key: DB_URL
+        fromDatabase:
+          name: newmoon-db
+          property: connectionString
 
       - key: CACHE_STORE
         value: database

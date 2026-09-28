@@ -156,7 +156,10 @@ class ProductController extends Controller
             $product->delete();
             return response()->json(['message' => 'Product deleted successfully']);
         } catch (QueryException $e) {
-            if ((string) $e->getCode() === '23000') {
+            // 23000 is MySQL's integrity-violation class. Postgres reports the
+            // specific cases instead: 23503 for a foreign key and 23505 for a
+            // unique constraint, so without both the delete surfaces as a 500.
+            if (in_array((string) $e->getCode(), ['23000', '23503', '23505'], true)) {
                 return response()->json([
                     'message' => 'Cannot delete this product because it is used in sales records. Disable the product instead.',
                     'code' => 'PRODUCT_DELETE_CONSTRAINT',

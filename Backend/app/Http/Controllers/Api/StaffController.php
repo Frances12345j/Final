@@ -228,7 +228,9 @@ class StaffController extends Controller
             return response()->json(['message' => 'Staff deleted successfully']);
         } catch (QueryException $e) {
             // Common case: staff has sales records; DB FK prevents delete.
-            if ((string) $e->getCode() === '23000') {
+            // 23000 is MySQL's integrity-violation class; Postgres reports
+            // 23503 (foreign key) or 23505 (unique) instead.
+            if (in_array((string) $e->getCode(), ['23000', '23503', '23505'], true)) {
                 return response()->json([
                     'message' => 'Cannot delete this staff because there are sales records linked to this account. Disable the staff instead.',
                     'code' => 'STAFF_DELETE_CONSTRAINT',

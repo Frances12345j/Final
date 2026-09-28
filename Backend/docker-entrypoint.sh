@@ -23,9 +23,12 @@ if [ ! -f /var/www/html/.env ]; then
     fi
 fi
 
-# Prevent crashes if MySQL is not configured yet
-if [ -z "$DB_HOST" ] || [ "$DB_HOST" = "127.0.0.1" ]; then
-    echo "DB_HOST not set or points to localhost. Using SQLite fallback."
+# Fall back to SQLite only when no external database is configured at all.
+# Production injects a single DB_URL connection string and leaves DB_HOST
+# empty, so testing DB_HOST alone would silently switch a real deployment to
+# SQLite. config/database.php gives DB_URL precedence over DB_HOST.
+if [ -z "$DB_URL" ] && { [ -z "$DB_HOST" ] || [ "$DB_HOST" = "127.0.0.1" ]; }; then
+    echo "No DB_URL or remote DB_HOST configured. Using SQLite fallback."
     touch /var/www/html/database/database.sqlite
     sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/" /var/www/html/.env || true
     sed -i "s|^DB_DATABASE=.*|DB_DATABASE=/var/www/html/database/database.sqlite|" /var/www/html/.env || true

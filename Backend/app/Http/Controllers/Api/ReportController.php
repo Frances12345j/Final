@@ -16,6 +16,32 @@ use Illuminate\Support\Facades\DB;
 class ReportController extends Controller
 {
     /**
+     * Build a SQL expression that renders a datetime column as a period label.
+     *
+     * MySQL uses DATE_FORMAT() with strftime-style patterns, while Postgres has
+     * no DATE_FORMAT and needs TO_CHAR() with its own pattern syntax. The two
+     * also disagree on what "week of year" means, so the pattern is translated
+     * rather than reused.
+     *
+     * @param  string  $column  Column reference, optionally table-qualified.
+     * @param  string  $groupBy  daily|weekly|monthly
+     */
+    private function periodExpression(string $column, string $groupBy): string
+    {
+        $isPostgres = DB::connection()->getDriverName() === 'pgsql';
+
+        $format = match ($groupBy) {
+            'weekly' => $isPostgres ? 'IYYY-IW' : '%x-%v',
+            'monthly' => $isPostgres ? 'YYYY-MM' : '%Y-%m',
+            default => $isPostgres ? 'YYYY-MM-DD' : '%Y-%m-%d',
+        };
+
+        return $isPostgres
+            ? sprintf("TO_CHAR(%s, '%s')", $column, $format)
+            : sprintf("DATE_FORMAT(%s, '%s')", $column, $format);
+    }
+
+    /**
      * Sales Report
      * GET /api/reports/sales
      * Params: start_date, end_date, group_by (daily, weekly, monthly, detail), branch_id
@@ -161,12 +187,12 @@ class ReportController extends Controller
         }
 
         // Grouped reports
-        $dateFormat = $groupBy === 'daily' ? '%Y-%m-%d' : 
-                     ($groupBy === 'weekly' ? '%Y-%u' : '%Y-%m');
+        $salePeriod = $this->periodExpression('sale_date', $groupBy);
+        $salesPeriod = $this->periodExpression('sales.sale_date', $groupBy);
 
         $groupedData = DB::table('sales')
             ->select(
-                DB::raw("DATE_FORMAT(sale_date, '$dateFormat') as period"),
+                DB::raw("$salePeriod as period"),
                 DB::raw('COUNT(*) as transaction_count'),
                 DB::raw('SUM(total) as total_sales'),
                 DB::raw('SUM(subtotal) as subtotal'),
@@ -175,7 +201,7 @@ class ReportController extends Controller
             )
             ->whereBetween('sale_date', [$validated['start_date'], $validated['end_date']])
             ->when($request->has('branch_id'), fn ($q) => $q->where('branch_id', $validated['branch_id']))
-            ->groupBy(DB::raw("DATE_FORMAT(sale_date, '$dateFormat')"))
+            ->groupBy(DB::raw($salePeriod))
             ->orderBy('period')
             ->get();
 
@@ -183,12 +209,12 @@ class ReportController extends Controller
         $itemsPerPeriod = DB::table('sale_items')
             ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->select(
-                DB::raw("DATE_FORMAT(sales.sale_date, '$dateFormat') as period"),
+                DB::raw("$salesPeriod as period"),
                 DB::raw('SUM(sale_items.quantity) as total_items')
             )
             ->whereBetween('sales.sale_date', [$validated['start_date'], $validated['end_date']])
             ->when($request->has('branch_id'), fn ($q) => $q->where('sales.branch_id', $validated['branch_id']))
-            ->groupBy(DB::raw("DATE_FORMAT(sales.sale_date, '$dateFormat')"))
+            ->groupBy(DB::raw($salesPeriod))
             ->get()
             ->keyBy('period');
 
@@ -490,9 +516,9 @@ class ReportController extends Controller
             'products.name as item_name',
             DB::raw("'OUT' as movement_type"),
             'sale_items.quantity',
-            DB::raw('COALESCE(branches.name, "N/A") as branch_name'),
-            DB::raw('CONCAT("Sale #", sales.id) as reference'),
-            DB::raw('"Sold via POS" as notes')
+            DB::raw("COALESCE(branches.name, 'N/A') as branch_name"),
+            DB::raw("CONCAT('Sale #', sales.id) as reference"),
+            DB::raw("'Sold via POS' as notes")
         )
         ->when(!empty($validated['branch_id']), fn($q) => $q->where('sales.branch_id', $validated['branch_id']))
         ->orderByDesc('sales.sale_date')
