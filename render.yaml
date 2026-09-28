@@ -54,7 +54,7 @@ services:
       - key: APP_KEY
         generateValue: true
       - key: APP_URL
-        value: https://newmoon-api.onrender.com
+        value: https://nmlmlh5.onrender.com
       - key: LOG_CHANNEL
         value: stderr
       - key: LOG_LEVEL
@@ -131,8 +131,11 @@ services:
     dockerContext: ./Backend
     plan: free
     region: singapore
-    # Reverb's built-in health endpoint. (/app is not a valid path here.)
-    healthCheckPath: /up
+    # Reverb serves its websocket upgrade on / and has no /up route (Laravel's
+    # health endpoint is only registered on the HTTP app, not the Reverb
+    # server), so a /up health check 404s and Render marks the service
+    # unhealthy. / is the only path that answers.
+    healthCheckPath: /
     autoDeploy: true
     envVars:
       - key: APP_NAME
@@ -201,9 +204,9 @@ services:
       # a scheme. This is why they are literals rather than `fromService`
       # (Render's `property: host` returns a bare hostname, no scheme).
       - key: VITE_API_BASE_URL
-        value: https://newmoon-api.onrender.com/api
+        value: https://nmlmlh5.onrender.com/api
       - key: VITE_API_ORIGIN
-        value: https://newmoon-api.onrender.com
+        value: https://nmlmlh5.onrender.com
       - key: VITE_WS_HOST
         value: newmoon-reverb.onrender.com
       - key: VITE_WS_PORT
