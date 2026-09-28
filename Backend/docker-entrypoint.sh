@@ -7,14 +7,6 @@ PORT="${PORT:-80}"
 sed -i "s/Listen 80/Listen ${PORT}/g" /etc/apache2/ports.conf
 sed -i "s/<VirtualHost \*:80>/<VirtualHost \*:${PORT}>/g" /etc/apache2/sites-available/000-default.conf
 
-# An unset APP_ENV must not be treated as "not production". A service created
-# without environment variables (e.g. a misconfigured duplicate of the API) has
-# no APP_ENV at all, which previously skipped the SQLite refusal below and
-# booted the app against an ephemeral empty database. Default it to production
-# so only an explicit APP_ENV=local opts into the SQLite fallback.
-APP_ENV="${APP_ENV:-production}"
-export APP_ENV
-
 # Ensure critical storage & cache directories exist with appropriate permissions
 mkdir -p /var/www/html/storage/framework/cache/data \
          /var/www/html/storage/framework/sessions \
@@ -40,13 +32,11 @@ if [ -z "$DB_URL" ] && { [ -z "$DB_HOST" ] || [ "$DB_HOST" = "127.0.0.1" ]; }; t
         echo "FATAL: APP_ENV=production but neither DB_URL nor a remote DB_HOST is set." >&2
         echo "The database service is probably not linked to this service. Refusing" >&2
         echo "to start on SQLite: the container filesystem is ephemeral, so every" >&2
-        echo "redeploy would silently discard the entire database. Requests would" >&2
-        echo "also fail with 'no such table' because the schema is never persisted." >&2
-        echo "Set DB_URL (and APP_ENV=local only for local development)." >&2
+        echo "redeploy would silently discard the entire database." >&2
         exit 1
     fi
 
-    echo "APP_ENV=${APP_ENV} and no DB_URL or remote DB_HOST. Using SQLite fallback."
+    echo "No DB_URL or remote DB_HOST configured. Using SQLite fallback."
     touch /var/www/html/database/database.sqlite
     sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/" /var/www/html/.env || true
     sed -i "s|^DB_DATABASE=.*|DB_DATABASE=/var/www/html/database/database.sqlite|" /var/www/html/.env || true
