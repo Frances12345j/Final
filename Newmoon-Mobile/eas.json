@@ -12,10 +12,20 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://nmlmlh5.onrender.com",
+        "EXPO_PUBLIC_WS_URL": "wss://newmoon-reverb.onrender.com",
+        "EXPO_PUBLIC_REVERB_KEY": "newmoon-app-key"
       }
     },
     "production": {
-      "autoIncrement": true
+      "autoIncrement": true,
+      "env": {
+        "EXPO_PUBLIC_BACKEND_URL": "https://nmlmlh5.onrender.com",
+        "EXPO_PUBLIC_WS_URL": "wss://newmoon-reverb.onrender.com",
+        "EXPO_PUBLIC_REVERB_KEY": "newmoon-app-key"
+      }
     }
   },
   "submit": {

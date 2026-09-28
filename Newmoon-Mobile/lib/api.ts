@@ -7,25 +7,56 @@ import { deleteUser } from './userStorage';
 /* ================================================================== */
 /* Central backend configuration                                       */
 /*                                                                    */
-/* The REST API and the WebSocket (Laravel Reverb) server run on the  */
-/* SAME host but on DIFFERENT ports. Both derive from the single       */
-/* BACKEND_IP below.                                                   */
+/* EXPO_PUBLIC_* values are inlined by Metro when the JS bundle is    */
+/* built, so they must be present in the EAS build profile (eas.json) */
+/* or in a local .env -- changing a .env after a build has no effect  */
+/* until the app is rebuilt.                                           */
 /*                                                                    */
-/* To change the backend, edit ONLY `BACKEND_IP` in this file.         */
+/* Local development: API and Reverb share one host on ports 8000     */
+/* and 8080.                                                           */
+/* Production: they are separate origins behind TLS, so the REST API  */
+/* and the WebSocket server need their own variables.                  */
 /* ================================================================== */
 
-export const BACKEND_IP = '192.168.254.105';
+const DEV_HOST = '192.168.254.105';
 
-export const API_PORT = 8000;
-export const WEBSOCKET_PORT = 8080;
+const parseOrigin = (value: string) => {
+  const match = /^(https?|wss?):\/\/([^/:?#]+)(?::(\d+))?/i.exec(value);
+  const scheme = match ? match[1].toLowerCase() : 'http';
+  const secure = scheme === 'https' || scheme === 'wss';
+  return {
+    host: match ? match[2] : DEV_HOST,
+    port: match && match[3] ? Number(match[3]) : secure ? 443 : 80,
+    secure,
+  };
+};
 
-export const BACKEND_ORIGIN = `http://${BACKEND_IP}:${API_PORT}`;
+const apiEndpoint = parseOrigin(
+  process.env.EXPO_PUBLIC_BACKEND_URL || `http://${DEV_HOST}:8000`
+);
+
+const wsEndpoint = parseOrigin(
+  process.env.EXPO_PUBLIC_WS_URL || `ws://${DEV_HOST}:8080`
+);
+
+const authority = (host: string, port: number, secure: boolean) =>
+  port === (secure ? 443 : 80) ? host : `${host}:${port}`;
+
+export const BACKEND_IP = apiEndpoint.host;
+export const WEBSOCKET_HOST = wsEndpoint.host;
+
+export const API_PORT = apiEndpoint.port;
+export const WEBSOCKET_PORT = wsEndpoint.port;
+
+export const BACKEND_ORIGIN = `${apiEndpoint.secure ? 'https' : 'http'}://${authority(
+  BACKEND_IP,
+  API_PORT,
+  apiEndpoint.secure
+)}`;
 
 export const API_BASE_URL = `${BACKEND_ORIGIN}/api`;
 
 export const BROADCAST_AUTH_URL = `${BACKEND_ORIGIN}/broadcasting/auth`;
-
-export const WEBSOCKET_HOST = BACKEND_IP;
 
 export const STORAGE_URL = `${BACKEND_ORIGIN}/storage`;
 
@@ -125,7 +156,8 @@ api.interceptors.response.use(
 
 const WS_HOST = WEBSOCKET_HOST;
 const WS_PORT = WEBSOCKET_PORT;
-const REVERB_KEY = 'newmoon-app-key';
+const WS_FORCE_TLS = wsEndpoint.secure;
+const REVERB_KEY = process.env.EXPO_PUBLIC_REVERB_KEY || 'newmoon-app-key';
 
 const Pusher = (PusherModule as any).Pusher ?? PusherModule;
 
@@ -139,8 +171,8 @@ export const getEcho = async (): Promise<Echo<any> | null> => {
       wsHost: WS_HOST,
       wsPort: WS_PORT,
       wssPort: WS_PORT,
-      forceTLS: false,
-      enabledTransports: ['ws', 'wss'],
+      forceTLS: WS_FORCE_TLS,
+      enabledTransports: WS_FORCE_TLS ? ['wss'] : ['ws'],
       authEndpoint: BROADCAST_AUTH_URL,
       auth: {
         headers: {
