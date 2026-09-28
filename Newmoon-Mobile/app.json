@@ -27,7 +27,9 @@
       "permissions": [
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
-        "ACCESS_BACKGROUND_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
     },
     "web": {
@@ -73,9 +75,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "3211dc6a-82b7-4fee-8433-031c4dd4fd87"
+        "projectId": "0ec4371f-64f4-46c8-ba78-766a870da790"
       }
     },
-    "owner": "franceslagapa27"
+    "owner": "frances12345j"
   }
 }
