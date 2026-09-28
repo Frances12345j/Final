@@ -186,7 +186,7 @@ export default function CartScreen() {
                   {item.image ? (
                     <Image
                       source={{
-                        uri: `${imageBaseUrl}/storage/${item.image}`,
+                        uri: `${imageBaseUrl}/${item.image}`,
                       }}
                       className="w-24 h-24 rounded-2xl"
                       resizeMode="cover"
