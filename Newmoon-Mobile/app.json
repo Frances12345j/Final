@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Newmoon-Mobile",
-    "slug": "newmoon-mobile",
+    "slug": "new-moon",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -66,7 +66,10 @@
           "locationAlwaysPermission": "Allow Newmoon-Mobile to use your location for delivery tracking.",
           "locationWhenInUsePermission": "Allow Newmoon-Mobile to use your location for delivery tracking."
         }
-      ]
+      ],
+      "expo-image",
+      "expo-secure-store",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -75,9 +78,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "0ec4371f-64f4-46c8-ba78-766a870da790"
+        "projectId": "f3947dfd-cf53-4c4c-b5c6-ae6919c4ceda"
       }
     },
-    "owner": "frances12345j"
+    "owner": "frances12345js-team"
   }
 }
