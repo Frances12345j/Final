@@ -38,7 +38,11 @@ services:
     dockerContext: ./Backend
     plan: free
     region: singapore
-    healthCheckPath: /api/health
+    # Liveness only. /up is registered by Laravel and never touches the
+    # database, so a deploy is not blocked while Postgres is still
+    # provisioning. /api/health remains available for monitoring and reports
+    # 503 when the database is unreachable.
+    healthCheckPath: /up
     autoDeploy: true
     envVars:
       - key: APP_NAME
