@@ -89,6 +89,9 @@ function Dashboard() {
   // BACK BUTTON TRAP
   // =========================================================
   useEffect(() => {
+    // Runs once on mount. It previously re-ran on every `location` change and
+    // pushed another identical entry each time, growing the history stack and
+    // making the Back button feel like it kept reloading the same page.
     window.history.pushState(null, document.title, window.location.href);
 
     const handlePopState = () => {
@@ -100,7 +103,7 @@ function Dashboard() {
     return () => {
       window.removeEventListener("popstate", handlePopState);
     };
-  }, [navigate, location]);
+  }, []);
 
   // Philippine Time
   useEffect(() => {

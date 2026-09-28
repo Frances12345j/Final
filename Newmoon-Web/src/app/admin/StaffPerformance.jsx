@@ -622,7 +622,7 @@ function StaffPerformance() {
           type="error"
           showIcon
           className="mb-4"
-          message="Failed to load staff performance"
+          title="Failed to load staff performance"
           description={error?.response?.data?.message || error?.message || "Unknown error. Check the network tab."}
         />
       )}
@@ -631,7 +631,7 @@ function StaffPerformance() {
           type="warning"
           showIcon
           className="mb-4"
-          message="No staff performance data"
+          title="No staff performance data"
           description={
             <span>
               The API returned an empty list for <b>{month}</b>

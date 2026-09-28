@@ -303,7 +303,7 @@ const ReportDashboard = () => {
         {dashboardData && dashboardData.alerts && dashboardData.alerts.length > 0 && (
           <Col span={24}>
             <Alert
-              message={
+              title={
                 <span className="font-semibold text-amber-800">
                   Attention Required
                 </span>

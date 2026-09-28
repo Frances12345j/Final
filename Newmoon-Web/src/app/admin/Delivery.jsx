@@ -495,7 +495,7 @@ const DeliveryReport = () => {
       </FilterBar>
 
       {error && (
-        <Alert message={error} type="error" showIcon closable onClose={() => setError(null)} className="mb-6 rounded-xl" />
+        <Alert title={error} type="error" showIcon closable onClose={() => setError(null)} className="mb-6 rounded-xl" />
       )}
 
       <SectionCard

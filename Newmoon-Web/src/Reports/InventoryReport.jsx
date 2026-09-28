@@ -692,7 +692,7 @@ const InventoryReport = () => {
                 <Alert
                   type="error"
                   showIcon
-                  message="Unable to load inventory records"
+                  title="Unable to load inventory records"
                   description={reportError}
                   action={
                     <Button

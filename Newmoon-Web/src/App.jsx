@@ -26,7 +26,7 @@ if (rootElement) {
     <React.StrictMode>
       <ConfigProvider spin={spinConfig}>
         <QueryClientProvider client={queryClient}>
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
             <LowStockProvider>
               <AdminApp />
             </LowStockProvider>
