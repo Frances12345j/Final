@@ -28,6 +28,14 @@ fi
 # empty, so testing DB_HOST alone would silently switch a real deployment to
 # SQLite. config/database.php gives DB_URL precedence over DB_HOST.
 if [ -z "$DB_URL" ] && { [ -z "$DB_HOST" ] || [ "$DB_HOST" = "127.0.0.1" ]; }; then
+    if [ "$APP_ENV" = "production" ]; then
+        echo "FATAL: APP_ENV=production but neither DB_URL nor a remote DB_HOST is set." >&2
+        echo "The database service is probably not linked to this service. Refusing" >&2
+        echo "to start on SQLite: the container filesystem is ephemeral, so every" >&2
+        echo "redeploy would silently discard the entire database." >&2
+        exit 1
+    fi
+
     echo "No DB_URL or remote DB_HOST configured. Using SQLite fallback."
     touch /var/www/html/database/database.sqlite
     sed -i "s/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/" /var/www/html/.env || true
