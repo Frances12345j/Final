@@ -26,6 +26,7 @@ import {
 import dayjs from "dayjs";
 import { api } from "@/config/api";
 import { useServerPagination } from "@/components/Pagination";
+import { listenStaffOrders } from "@/hooks/useOrderWebSocket";
 const PageShell = ({ children }) => (
   <div className="min-h-screen bg-[#FFF7ED] p-4 sm:p-6 lg:p-8">{children}</div>
 );
@@ -206,6 +207,7 @@ const DeliveryReport = () => {
     pagination,
     setCurrentPage,
     raw: deliveryResult,
+    refetch: refetchDeliveries,
   } = useServerPagination({
     queryKey: [
       "deliveries",
@@ -237,6 +239,18 @@ const DeliveryReport = () => {
   useEffect(() => {
     setError(queryError?.response?.data?.message || queryError?.message || null);
   }, [queryError]);
+
+  // Live order updates. Without this the list only refreshes on manual reload,
+  // because the staff.orders broadcast is never consumed on the web admin.
+  // `refetch` is stable per React Query cache entry, so listing it in the
+  // dependency array keeps the subscription from churning on every render.
+  useEffect(() => {
+    const unsubscribe = listenStaffOrders(
+      () => refetchDeliveries(),
+      () => refetchDeliveries()
+    );
+    return unsubscribe;
+  }, [refetchDeliveries]);
 
   // Load branches for the filter
   useEffect(() => {
