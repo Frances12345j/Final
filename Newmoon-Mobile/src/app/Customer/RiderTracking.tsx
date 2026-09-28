@@ -35,7 +35,7 @@ const GENERATE_MAP_HTML = () => `
     *{margin:0;padding:0}
     html,body{height:100%;width:100%;overflow:hidden;background:#f3f4f6}
     #map{height:100%;width:100%;background:#f3f4f6}
-    .route-line{stroke:#1E40AF;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 2px 4px rgba(30,64,175,0.2))}
+    .route-line{stroke:#F97316;stroke-width:8;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 2px 4px rgba(249,115,22,0.25))}
     .rider-dot{position:relative;width:22px;height:22px;background:#2563EB;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)}
     .rider-dot::before,.rider-dot::after{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:22px;height:22px;border-radius:50%;background:rgba(37,99,235,0.5);z-index:-1}
     .rider-dot::before{animation:heartbeat 1.6s ease-out infinite}
@@ -96,7 +96,7 @@ const GENERATE_MAP_HTML = () => `
             else return;
           }
           if(window.activeRoute)window.map.removeLayer(window.activeRoute);
-          window.activeRoute=L.polyline(coords,{color:'#1E40AF',weight:8,opacity:0.85,smoothFactor:1,lineJoin:'round',lineCap:'round',className:'route-line'}).addTo(map);
+          window.activeRoute=L.polyline(coords,{color:'#F97316',weight:8,opacity:0.85,smoothFactor:1,lineJoin:'round',lineCap:'round',className:'route-line'}).addTo(map);
         }
 
         function updateRouteDisplay(currentIndex){
@@ -108,7 +108,7 @@ const GENERATE_MAP_HTML = () => `
             else return;
           }
           if(window.activeRoute)window.map.removeLayer(window.activeRoute);
-          window.activeRoute=L.polyline(remaining,{color:'#1E40AF',weight:8,opacity:0.85,smoothFactor:1,lineJoin:'round',lineCap:'round',className:'route-line'}).addTo(map);
+          window.activeRoute=L.polyline(remaining,{color:'#F97316',weight:8,opacity:0.85,smoothFactor:1,lineJoin:'round',lineCap:'round',className:'route-line'}).addTo(map);
         }
 
         function fetchRouteWithRetry(fromLat,fromLng,toLat,toLng,retryCount){
