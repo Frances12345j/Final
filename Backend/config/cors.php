@@ -29,7 +29,13 @@ return [
     |
     */
 
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    // 'broadcasting/*' must be listed or the web admin's Echo private-channel
+    // auth POST is rejected by the browser: the SPA lives on
+    // newmoon-web.onrender.com and calls nmlmlh5.onrender.com, so the response
+    // needs an Access-Control-Allow-Origin header. Without it the REST calls
+    // still work (they are under api/*) but every private channel silently
+    // fails to authenticate and order updates never arrive.
+    'paths' => ['api/*', 'broadcasting/*', 'storage/*', 'sanctum/csrf-cookie'],
 
     'allowed_methods' => ['*'],
 
