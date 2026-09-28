@@ -169,7 +169,7 @@ const ReportDashboard = () => {
                 onChange={setDateRange}
                 format="YYYY-MM-DD"
                 allowClear={false}
-                className="h-11! w-full! rounded-xl! border-white/15! hover:border-orange-300! focus:border-orange-500!"
+                className="h-11! w-full! rounded-xl! border-white/15! hover:border-orange-300!"
               />
 
               <Button
@@ -252,11 +252,10 @@ const ReportDashboard = () => {
                   </div>
 
                   <div
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                      dashboardData.low_stock_count > 0
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${dashboardData.low_stock_count > 0
                         ? "bg-red-500/15 text-red-400"
                         : "bg-green-500/15 text-green-400"
-                    }`}
+                      }`}
                   >
                     <WarningOutlined className="text-xl" />
                   </div>
@@ -285,11 +284,10 @@ const ReportDashboard = () => {
                   </div>
 
                   <div
-                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                      dashboardData.attendance_rate >= 90
+                    className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${dashboardData.attendance_rate >= 90
                         ? "bg-green-500/15 text-green-400"
                         : "bg-amber-500/15 text-amber-400"
-                    }`}
+                      }`}
                   >
                     <CalendarOutlined className="text-xl" />
                   </div>

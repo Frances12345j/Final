@@ -53,3 +53,8 @@ services:
     envVars:
       - key: NODE_VERSION
         value: "22.20.0"
+      - key: EXPO_PUBLIC_BACKEND_URL
+        fromService:
+          type: web
+          name: newmoon-app
+          property: host

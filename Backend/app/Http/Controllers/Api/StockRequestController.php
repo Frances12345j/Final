@@ -62,8 +62,7 @@ class StockRequestController extends Controller
      * Get all stock requests (for admin)
      */
     public function allStockRequests(Request $request)
-{
-    try {
+    {
         $query = StockRequest::with($this->safeWith())
             ->orderBy($this->orderColumn(), 'desc');
 
@@ -78,14 +77,7 @@ class StockRequestController extends Controller
         $requests = $query->paginate(5);
 
         return response()->json($requests);
-    } catch (\Throwable $e) {
-        \Log::error('StockRequest allStockRequests failed', ['error' => $e->getMessage()]);
-        return response()->json([
-            'message' => 'Failed to fetch stock requests',
-            'error'   => $e->getMessage(),
-        ], 500);
     }
-}
 
     /**
      * Store a new stock request

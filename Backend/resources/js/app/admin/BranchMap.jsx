@@ -488,7 +488,7 @@ function BranchMap() {
             onChange={(e) => setSearchTerm(e.target.value)}
             style={{ width: 300 }}
             allowClear
-            className="h-11! rounded-xl! border-stone-200! hover:border-orange-300! focus:border-orange-500!"
+            className="h-11! rounded-xl! border-stone-200! hover:border-orange-300!"
           />
         </FilterBar>
       </div>

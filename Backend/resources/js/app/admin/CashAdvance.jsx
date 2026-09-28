@@ -306,7 +306,7 @@ function CashAdvance() {
             value={statusFilter}
             onChange={setStatusFilter}
             style={{ width: 160 }}
-            className="h-10! rounded-xl! border-stone-200! hover:border-orange-300! focus:border-orange-500!"
+            className="h-10! rounded-xl! border-stone-200! hover:border-orange-300!"
           >
             <Select.Option value="all">All</Select.Option>
             <Select.Option value="pending">Pending</Select.Option>

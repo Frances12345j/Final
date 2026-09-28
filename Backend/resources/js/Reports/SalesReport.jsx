@@ -206,53 +206,53 @@ const SalesReport = () => {
   }, [dateRange, groupBy, selectedBranch, userBranchId, isAdmin]);
 
   // ---------- 6-month trend ----------
- // ---------- 6-month trend ----------
-useEffect(() => {
-  const fetchTrend = async () => {
-    setTrendLoading(true);
-    try {
-      const end = dayjs().endOf("month");
-      const start = dayjs().subtract(5, "month").startOf("month");
+  // ---------- 6-month trend ----------
+  useEffect(() => {
+    const fetchTrend = async () => {
+      setTrendLoading(true);
+      try {
+        const end = dayjs().endOf("month");
+        const start = dayjs().subtract(5, "month").startOf("month");
 
-      const params = {
-        start_date: start.format("YYYY-MM-DD"),
-        end_date: end.format("YYYY-MM-DD"),
-        group_by: "monthly",
-      };
-      if (!isAdmin) params.branch_id = userBranchId;
-      else if (selectedBranch) params.branch_id = selectedBranch;
+        const params = {
+          start_date: start.format("YYYY-MM-DD"),
+          end_date: end.format("YYYY-MM-DD"),
+          group_by: "monthly",
+        };
+        if (!isAdmin) params.branch_id = userBranchId;
+        else if (selectedBranch) params.branch_id = selectedBranch;
 
-      const res = await api.get("/reports/sales", { params });
-      const raw = res.data?.data || [];
+        const res = await api.get("/reports/sales", { params });
+        const raw = res.data?.data || [];
 
-      // Build a lookup of period -> total_sales from the API
-      const byPeriod = {};
-      raw.forEach((row) => {
-        // normalize "2026-09" or "2026-09-01" to "YYYY-MM"
-        const key = String(row.period || "").slice(0, 7);
-        byPeriod[key] = Number(row.total_sales) || 0;
-      });
-
-      // Always generate the last 6 months (oldest → newest)
-      const formatted = [];
-      for (let i = 5; i >= 0; i--) {
-        const d = dayjs().subtract(i, "month");
-        const key = d.format("YYYY-MM");
-        formatted.push({
-          month: d.format("MMM YYYY"),
-          sales: byPeriod[key] || 0,
+        // Build a lookup of period -> total_sales from the API
+        const byPeriod = {};
+        raw.forEach((row) => {
+          // normalize "2026-09" or "2026-09-01" to "YYYY-MM"
+          const key = String(row.period || "").slice(0, 7);
+          byPeriod[key] = Number(row.total_sales) || 0;
         });
-      }
 
-      setTrendData(formatted);
-    } catch (err) {
-      console.error("[SalesReport] Trend fetch error:", err);
-    } finally {
-      setTrendLoading(false);
-    }
-  };
-  fetchTrend();
-}, [selectedBranch, userBranchId, isAdmin]);
+        // Always generate the last 6 months (oldest → newest)
+        const formatted = [];
+        for (let i = 5; i >= 0; i--) {
+          const d = dayjs().subtract(i, "month");
+          const key = d.format("YYYY-MM");
+          formatted.push({
+            month: d.format("MMM YYYY"),
+            sales: byPeriod[key] || 0,
+          });
+        }
+
+        setTrendData(formatted);
+      } catch (err) {
+        console.error("[SalesReport] Trend fetch error:", err);
+      } finally {
+        setTrendLoading(false);
+      }
+    };
+    fetchTrend();
+  }, [selectedBranch, userBranchId, isAdmin]);
 
   // ---------- Table pagination ----------
   const handleTableChange = (p) => {
@@ -395,8 +395,8 @@ useEffect(() => {
             </thead>
             <tbody>
               ${branchRows
-                .map(
-                  (r) => `
+        .map(
+          (r) => `
                 <tr>
                   <td>${r.branch_name}</td>
                   <td align="right">${r.total_transactions}</td>
@@ -405,8 +405,8 @@ useEffect(() => {
                   <td align="right">${peso(r.discounts)}</td>
                   <td align="right">${peso(r.net_sales)}</td>
                 </tr>`
-                )
-                .join("")}
+        )
+        .join("")}
             </tbody>
             <tfoot>
               <tr>
@@ -848,7 +848,7 @@ useEffect(() => {
                 onChange={setDateRange}
                 format="YYYY-MM-DD"
                 allowClear={false}
-                className="h-11! rounded-xl! border-stone-200! hover:border-orange-300! focus-within:border-orange-500!"
+                className="h-11! rounded-xl! border-stone-200! hover:border-orange-300!"
               />
               <Divider orientation="vertical" className="border-orange-100!" />
               <Text strong className="text-sm font-semibold text-stone-700">
@@ -857,7 +857,7 @@ useEffect(() => {
               <Radio.Group
                 value={groupBy}
                 onChange={(e) => setGroupBy(e.target.value)}
-                className="[&_.ant-radio-button-wrapper]:border-orange-200! [&_.ant-radio-button-wrapper:hover]:border-orange-300! [&_.ant-radio-button-wrapper:hover]:text-orange-600! [&_.ant-radio-button-wrapper-checked]:border-orange-500! [&_.ant-radio-button-wrapper-checked]:bg-orange-500! [&_.ant-radio-button-wrapper-checked]:text-white! [&_.ant-radio-button-wrapper-checked]:shadow-sm! [&_.ant-radio-button-wrapper-checked::before]:bg-orange-500!"
+                className="[&_.ant-radio-button-wrapper]:border-orange-200! [&_.ant-radio-button-wrapper:hover]:text-orange-600! [&_.ant-radio-button-wrapper-checked]:bg-orange-500! [&_.ant-radio-button-wrapper-checked]:shadow-sm!"
               >
                 <Radio.Button value="daily">Daily</Radio.Button>
                 <Radio.Button value="weekly">Weekly</Radio.Button>
@@ -876,7 +876,7 @@ useEffect(() => {
                   allowClear
                   value={selectedBranch}
                   onChange={setSelectedBranch}
-                  className="h-11! rounded-xl! border-stone-200! hover:border-orange-300! focus:border-orange-500!"
+                  className="h-11! rounded-xl! border-stone-200! hover:border-orange-300!"
                 >
                   {branches.map((branch) => (
                     <Select.Option key={branch.id} value={branch.id}>
@@ -992,8 +992,8 @@ useEffect(() => {
                   {groupBy === "detail"
                     ? "Transaction Details"
                     : groupBy === "branch"
-                    ? `Branch Comparison — All ${branchRows.length} Branches`
-                    : `Sales by ${groupBy}`}
+                      ? `Branch Comparison — All ${branchRows.length} Branches`
+                      : `Sales by ${groupBy}`}
                 </span>
                 <span className="rounded-full border border-orange-100 bg-orange-50 px-3 py-1.5 text-xs font-semibold text-orange-700">
                   {groupBy === "branch"
@@ -1012,7 +1012,7 @@ useEffect(() => {
                 pagination={serverPagination(pagination, { label: "sales" })}
                 onChange={handleTableChange}
                 scroll={{ x: true }}
-                className="[&_.ant-table-container]:rounded-xl! [&_.ant-table-thead_>_tr_>_th]:bg-[#FFF1E6]! [&_.ant-table-thead_>_tr_>_th]:text-stone-700! [&_.ant-table-thead_>_tr_>_th]:font-semibold! [&_.ant-table-tbody_>_tr:hover_>_td]:bg-[#FFF8ED]!"
+                className="[&_.ant-table-container]:rounded-xl! [&_.ant-table-thead_>_tr_>_th]:bg-[#FFF1E6]! [&_.ant-table-thead_>_tr_>_th]:text-stone-700! [&_.ant-table-thead_>_tr_>_th]:font-semibold!"
               />
             ) : groupBy === "branch" ? (
               <Table
@@ -1022,7 +1022,7 @@ useEffect(() => {
                 loading={loading}
                 pagination={false}
                 scroll={{ x: true }}
-                className="[&_.ant-table-container]:rounded-xl! [&_.ant-table-thead_>_tr_>_th]:bg-[#FFF1E6]! [&_.ant-table-thead_>_tr_>_th]:text-stone-700! [&_.ant-table-thead_>_tr_>_th]:font-semibold! [&_.ant-table-tbody_>_tr:hover_>_td]:bg-[#FFF8ED]!"
+                className="[&_.ant-table-container]:rounded-xl! [&_.ant-table-thead_>_tr_>_th]:bg-[#FFF1E6]! [&_.ant-table-thead_>_tr_>_th]:text-stone-700! [&_.ant-table-thead_>_tr_>_th]:font-semibold!"
               />
             ) : (
               <Table
@@ -1032,7 +1032,7 @@ useEffect(() => {
                 loading={loading}
                 pagination={clientPagination({ label: "days" })}
                 scroll={{ x: true }}
-                className="[&_.ant-table-container]:rounded-xl! [&_.ant-table-thead_>_tr_>_th]:bg-[#FFF1E6]! [&_.ant-table-thead_>_tr_>_th]:text-stone-700! [&_.ant-table-thead_>_tr_>_th]:font-semibold! [&_.ant-table-tbody_>_tr:hover_>_td]:bg-[#FFF8ED]!"
+                className="[&_.ant-table-container]:rounded-xl! [&_.ant-table-thead_>_tr_>_th]:bg-[#FFF1E6]! [&_.ant-table-thead_>_tr_>_th]:text-stone-700! [&_.ant-table-thead_>_tr_>_th]:font-semibold!"
               />
             )}
           </Card>

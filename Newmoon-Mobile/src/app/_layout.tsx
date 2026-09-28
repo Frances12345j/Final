@@ -8,18 +8,7 @@ const queryClient = new QueryClient();
 
 export default function RootLayout() {
     const router = useRouter();
-    const hasReset = useRef(false);
 
-    useEffect(() => {
-        if (!hasReset.current) {
-            hasReset.current = true;
-            if (typeof window !== 'undefined' && window.localStorage) {
-                window.localStorage.removeItem('auth_token');
-                window.localStorage.removeItem('user');
-            }
-            router.replace('/Login');
-        }
-    }, []);
 
     return (
         <QueryClientProvider client={queryClient}>

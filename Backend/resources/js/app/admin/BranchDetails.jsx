@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Card, Tag, Typography, Button, Modal, DatePicker as AntDatePicker } from "antd";
-import { 
-  CalendarOutlined, 
-  ClockCircleOutlined, 
+import {
+  CalendarOutlined,
+  ClockCircleOutlined,
   SearchOutlined,
   PrinterOutlined,
   CheckCircleOutlined,
@@ -320,7 +320,7 @@ function BranchDetails() {
   // Filter attendance by search term
   const filteredAttendance = useMemo(() => {
     if (!searchTerm) return attendance;
-    return attendance.filter(staff => 
+    return attendance.filter(staff =>
       staff.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       staff.position.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -362,7 +362,7 @@ function BranchDetails() {
   };
 
   const getStatusTag = (status) => {
-    switch(status) {
+    switch (status) {
       case "Present":
         return <Tag className="rounded-full border border-green-200 bg-green-50 px-3 py-1 text-green-700" icon={<CheckCircleOutlined />}>Present</Tag>;
       case "Completed":
@@ -690,7 +690,7 @@ function BranchDetails() {
           </div>
           <div className="w-full sm:w-auto">
             <label className="mb-1 block text-xs font-semibold" style={FIELD_LABEL}>Search Staff</label>
-            <div className="flex items-center rounded-xl border border-orange-200 bg-white px-3 py-1.5 transition-all duration-200 focus-within:border-orange-400">
+            <div className="flex items-center rounded-xl border border-orange-200 bg-white px-3 py-1.5 transition-all duration-200">
               <SearchOutlined className="mr-2 text-sm" style={{ color: ACCENT }} />
               <input
                 type="text"

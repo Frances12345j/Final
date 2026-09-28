@@ -7,27 +7,36 @@ import { deleteUser } from './userStorage';
 /* ================================================================== */
 /* Central backend configuration                                       */
 /*                                                                    */
-/* The REST API and the WebSocket (Laravel Reverb) server run on the  */
-/* SAME host but on DIFFERENT ports. Both derive from the single       */
-/* BACKEND_IP below.                                                   */
+/* In production (Render), set EXPO_PUBLIC_BACKEND_URL to the         */
+/* deployed Laravel backend URL, e.g.:                                 */
+/*   https://newmoon-app.onrender.com                                  */
 /*                                                                    */
-/* To change the backend, edit ONLY `BACKEND_IP` in this file.         */
+/* For local dev, leave env vars unset — the local IP is used.        */
 /* ================================================================== */
 
-export const BACKEND_IP = '192.168.254.105';
+// Local dev fallback
+const LOCAL_IP   = '192.168.254.105';
+const LOCAL_PORT = 8000;
+const LOCAL_WS_PORT = 8080;
 
-export const API_PORT = 8000;
-export const WEBSOCKET_PORT = 8080;
+// Production: set EXPO_PUBLIC_BACKEND_URL in Render env vars
+const PROD_ORIGIN = process.env.EXPO_PUBLIC_BACKEND_URL || '';
 
-export const BACKEND_ORIGIN = `http://${BACKEND_IP}:${API_PORT}`;
+export const BACKEND_ORIGIN = PROD_ORIGIN || `http://${LOCAL_IP}:${LOCAL_PORT}`;
 
-export const API_BASE_URL = `${BACKEND_ORIGIN}/api`;
+const isSecure = BACKEND_ORIGIN.startsWith('https://');
 
-export const BROADCAST_AUTH_URL = `${BACKEND_ORIGIN}/broadcasting/auth`;
+export const API_BASE_URL        = `${BACKEND_ORIGIN}/api`;
+export const BROADCAST_AUTH_URL  = `${BACKEND_ORIGIN}/broadcasting/auth`;
+export const STORAGE_URL         = `${BACKEND_ORIGIN}/storage`;
 
-export const WEBSOCKET_HOST = BACKEND_IP;
+// WebSocket host — strip protocol and port from origin for Pusher
+export const WEBSOCKET_HOST = PROD_ORIGIN
+  ? BACKEND_ORIGIN.replace(/^https?:\/\//, '').split(':')[0]
+  : LOCAL_IP;
 
-export const STORAGE_URL = `${BACKEND_ORIGIN}/storage`;
+export const WEBSOCKET_PORT  = PROD_ORIGIN ? (isSecure ? 443 : 80) : LOCAL_WS_PORT;
+export const IS_SECURE       = isSecure;
 
 /* ------------------------------------------------------------------ */
 /* REST API (Axios)                                                    */
@@ -139,7 +148,7 @@ export const getEcho = async (): Promise<Echo<any> | null> => {
       wsHost: WS_HOST,
       wsPort: WS_PORT,
       wssPort: WS_PORT,
-      forceTLS: false,
+      forceTLS: IS_SECURE,
       enabledTransports: ['ws', 'wss'],
       authEndpoint: BROADCAST_AUTH_URL,
       auth: {

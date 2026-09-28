@@ -62,7 +62,7 @@ const BranchReport = () => {
 
       setBranches(Array.isArray(branchesRes.data) ? branchesRes.data : []);
       const data = branchRes.data || {};
-      
+
       setBranchData(data.data || []);
       setSummary(data.summary || null);
       if (data.pagination) {
@@ -288,7 +288,7 @@ const BranchReport = () => {
             <div className="flex flex-wrap items-center gap-4">
               <Text strong>Date Range:</Text>
               <RangePicker
-                className="h-11! rounded-xl! border-stone-200! hover:border-orange-300! focus:border-orange-500!"
+                className="h-11! rounded-xl! border-stone-200! hover:border-orange-300!"
                 value={dateRange}
                 onChange={setDateRange}
                 format="YYYY-MM-DD"
